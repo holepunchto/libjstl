@@ -13,7 +13,9 @@ list(APPEND tests
   create-function-return-string
   create-function-return-string-literal
   create-function-return-uint8array
+  create-function-return-uint8array-span
   create-function-return-uint16array
+  create-function-return-uint16array-span
   create-function-return-uint32
   create-function-return-vector-int32
   create-function-return-void
@@ -26,7 +28,9 @@ list(APPEND tests
   create-function-return-void-arg-string
   create-function-return-void-arg-string-literal
   create-function-return-void-arg-uint8array
+  create-function-return-void-arg-uint8array-span
   create-function-return-void-arg-uint16array
+  create-function-return-void-arg-uint16array-span
   create-function-return-void-arg-uint32
   create-function-return-void-arg-vector-int32
   create-reference-get-value

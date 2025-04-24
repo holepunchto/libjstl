@@ -1190,6 +1190,49 @@ struct js_type_info_t<std::vector<T>> {
 };
 
 template <typename T>
+struct js_type_info_t<std::span<T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const std::span<T> &view, js_value_t *&result) {
+    int err;
+
+    js_value_t *arraybuffer;
+
+    T *data;
+    err = js_create_arraybuffer(env, view.size_bytes(), (void **) &data, &arraybuffer);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), data);
+
+    return js_create_typedarray(env, js_typedarray_info_t<T>::type, view.size(), arraybuffer, 0, &result);
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, std::span<T> &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_typedarray<T>>(env, value, js_typedarray_info_t<T>::label);
+      if (err < 0) return err;
+    }
+
+    T *data;
+    size_t len;
+    err = js_get_typedarray_info(env, value, nullptr, (void **) &data, &len, nullptr, nullptr);
+    if (err < 0) return err;
+
+    result = std::span(data, len);
+
+    return 0;
+  }
+};
+
+template <typename T>
 struct js_property_t {
   std::string name;
   T value;
