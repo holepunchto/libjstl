@@ -768,6 +768,53 @@ struct js_type_info_t<js_arraybuffer_t> {
   }
 };
 
+struct js_arraybuffer_span_t : std::span<uint8_t> {
+  js_arraybuffer_span_t() : std::span<uint8_t>() {}
+
+  js_arraybuffer_span_t(uint8_t *data, size_t len) : std::span<uint8_t>(data, len) {}
+};
+
+template <>
+struct js_type_info_t<js_arraybuffer_span_t> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const js_arraybuffer_span_t &view, js_value_t *&result) {
+    int err;
+
+    uint8_t *data;
+    err = js_create_arraybuffer(env, view.size(), (void **) &data, &result);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), data);
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_arraybuffer_span_t &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_arraybuffer>(env, value, "arraybuffer");
+      if (err < 0) return err;
+    }
+
+    uint8_t *data;
+    size_t len;
+    err = js_get_arraybuffer_info(env, value, (void **) &data, &len);
+    if (err < 0) return err;
+
+    result = js_arraybuffer_span_t(data, len);
+
+    return 0;
+  }
+};
+
 template <typename T>
 struct js_type_info_t<js_typedarray_t<T>> {
   using type = js_value_t *;
@@ -792,6 +839,56 @@ struct js_type_info_t<js_typedarray_t<T>> {
     }
 
     result = js_typedarray_t<T>(value);
+
+    return 0;
+  }
+};
+
+template <typename T>
+struct js_typedarray_span_t : std::span<T> {
+  js_typedarray_span_t() : std::span<T>() {}
+
+  js_typedarray_span_t(T *data, size_t len) : std::span<T>(data, len) {}
+};
+
+template <typename T>
+struct js_type_info_t<js_typedarray_span_t<T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const js_typedarray_span_t<T> &view, js_value_t *&result) {
+    int err;
+
+    js_value_t *arraybuffer;
+
+    T *data;
+    err = js_create_arraybuffer(env, view.size_bytes(), (void **) &data, &arraybuffer);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), data);
+
+    return js_create_typedarray(env, js_typedarray_info_t<T>::type, view.size(), arraybuffer, 0, &result);
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_typedarray_span_t<T> &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_typedarray<T>>(env, value, js_typedarray_info_t<T>::label);
+      if (err < 0) return err;
+    }
+
+    T *data;
+    size_t len;
+    err = js_get_typedarray_info(env, value, nullptr, (void **) &data, &len, nullptr, nullptr);
+    if (err < 0) return err;
+
+    result = js_typedarray_span_t(data, len);
 
     return 0;
   }
