@@ -5,6 +5,8 @@ list(APPEND tests
   create-function-receiver
   create-function-receiver-no-env
   create-function-return-array-int32
+  create-function-return-arraybuffer
+  create-function-return-arraybuffer-span
   create-function-return-bool
   create-function-return-double
   create-function-return-int32
@@ -22,6 +24,8 @@ list(APPEND tests
   create-function-return-vector-int32
   create-function-return-void
   create-function-return-void-arg-array-int32
+  create-function-return-void-arg-arraybuffer
+  create-function-return-void-arg-arraybuffer-span
   create-function-return-void-arg-bool
   create-function-return-void-arg-double
   create-function-return-void-arg-int32
