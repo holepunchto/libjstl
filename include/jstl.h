@@ -1644,9 +1644,7 @@ struct js_function_info_t;
 
 template <typename R, typename... A, R fn(A...)>
 struct js_function_info_t<fn> {
-  using type = R(A...);
-  using result = R;
-  using arguments = std::tuple<A...>;
+  using type = js_function_t<R, A...>;
 
   template <bool checked, bool scoped>
   static auto
@@ -1686,9 +1684,7 @@ struct js_function_info_t<fn> {
 
 template <typename R, typename... A, R fn(js_env_t *, A...)>
 struct js_function_info_t<fn> {
-  using type = R(js_env_t *, A...);
-  using result = R;
-  using arguments = std::tuple<A...>;
+  using type = js_function_t<R, A...>;
 
   template <bool checked, bool scoped>
   static auto
@@ -1726,21 +1722,21 @@ struct js_function_info_t<fn> {
   }
 };
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true, typename R, typename... A>
+template <auto fn, bool checked = js_is_debug, bool scoped = true>
 static inline auto
-js_create_function(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
+js_create_function(js_env_t *env, const char *name, size_t len, typename js_function_info_t<fn>::type &result) {
   return js_function_info_t<fn>::template marshall<checked, scoped>(env, name, len, result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true, typename R, typename... A>
+template <auto fn, bool checked = js_is_debug, bool scoped = true>
 static inline auto
-js_create_function(js_env_t *env, const std::string &name, js_function_t<R, A...> &result) {
+js_create_function(js_env_t *env, const std::string &name, typename js_function_info_t<fn>::type &result) {
   return js_function_info_t<fn>::template marshall<checked, scoped>(env, name.data(), name.size(), result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true, typename R, typename... A>
+template <auto fn, bool checked = js_is_debug, bool scoped = true>
 static inline auto
-js_create_function(js_env_t *env, js_function_t<R, A...> &result) {
+js_create_function(js_env_t *env, typename js_function_info_t<fn>::type &result) {
   return js_function_info_t<fn>::template marshall<checked, scoped>(env, nullptr, 0, result);
 }
 
