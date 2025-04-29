@@ -30,6 +30,7 @@ list(APPEND tests
   create-function-return-void-arg-double
   create-function-return-void-arg-int32
   create-function-return-void-arg-int64
+  create-function-return-void-arg-optional-string
   create-function-return-void-arg-pointer
   create-function-return-void-arg-string
   create-function-return-void-arg-string-literal

@@ -1330,6 +1330,45 @@ struct js_type_info_t<std::span<T>> {
 };
 
 template <typename T>
+struct js_type_info_t<std::optional<T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_type_info_t<T>::signature;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const std::optional<T> &value, js_value_t *&result) {
+    if (value) {
+      return js_type_info_t<T>::template marshall<checked>(env, *value, result);
+    }
+
+    return js_get_undefined(env, &result);
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, std::optional<T> &result) {
+    int err;
+
+    bool is_undefined;
+    err = js_is_undefined(env, value, &is_undefined);
+    if (err < 0) return err;
+
+    if (is_undefined) {
+      result = std::nullopt;
+    } else {
+      T unmarshalled;
+      err = js_type_info_t<T>::template unmarshall<checked>(env, value, unmarshalled);
+      if (err < 0) return err;
+
+      result = std::optional(unmarshalled);
+    }
+
+    return 0;
+  }
+};
+
+template <typename T>
 struct js_property_t {
   std::string name;
   T value;
