@@ -1286,6 +1286,71 @@ struct js_type_info_t<std::vector<T>> {
   }
 };
 
+template <typename... T>
+struct js_type_info_t<std::tuple<T...>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked, size_t... I>
+  static auto
+  marshall(js_env_t *env, const std::tuple<T...> &tuple, js_value_t *&result, std::index_sequence<I...>) {
+    int err;
+    err = js_create_array_with_length(env, sizeof...(T), &result);
+    assert(err == 0);
+
+    try {
+      js_value_t *values[] = {
+        js_marshall_untyped_value<checked, T>(env, std::get<I>(tuple))...
+      };
+
+      return js_set_array_elements(env, result, (const js_value_t **) values, sizeof...(T), 0);
+    } catch (int err) {
+      return err;
+    }
+  }
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const std::tuple<T...> &tuple, js_value_t *&result) {
+    return marshall<checked>(env, tuple, result, std::index_sequence_for<T...>());
+  }
+
+  template <bool checked, size_t... I>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, std::tuple<T...> &result, std::index_sequence<I...>) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_array>(env, value, "array");
+      if (err < 0) return err;
+    }
+
+    js_value_t *values[sizeof...(T)];
+    uint32_t len;
+    err = js_get_array_elements(env, value, values, sizeof...(T), 0, &len);
+    if (err < 0) return err;
+
+    assert(len == sizeof...(T));
+
+    try {
+      result = {
+        js_unmarshall_untyped_value<checked, T>(env, values[I])...
+      };
+
+      return 0;
+    } catch (int err) {
+      return err;
+    }
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, std::tuple<T...> &result) {
+    return unmarshall<checked>(env, value, result, std::index_sequence_for<T...>());
+  }
+};
+
 template <typename T>
 struct js_type_info_t<std::span<T>> {
   using type = js_value_t *;

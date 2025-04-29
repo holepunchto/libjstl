@@ -34,6 +34,8 @@ list(APPEND tests
   create-function-return-void-arg-pointer
   create-function-return-void-arg-string
   create-function-return-void-arg-string-literal
+  create-function-return-void-arg-tuple-int32
+  create-function-return-void-arg-tuple-int32-string
   create-function-return-void-arg-uint8array
   create-function-return-void-arg-uint8array-span
   create-function-return-void-arg-uint8array-typedarray-span
