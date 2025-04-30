@@ -2675,6 +2675,35 @@ js_get_array_elements(js_env_t *env, const js_array_t &array, std::vector<T> &re
   return 0;
 }
 
+template <bool checked = js_is_debug, typename... T, size_t... I>
+static inline auto
+js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &result, std::index_sequence<I...>) {
+  int err;
+
+  js_value_t *values[sizeof...(T)];
+  uint32_t len;
+  err = js_get_array_elements(env, array.value, values, sizeof...(T), 0, &len);
+  if (err < 0) return err;
+
+  assert(len == sizeof...(T));
+
+  try {
+    result = {
+      js_unmarshall_untyped_value<checked, T>(env, values[I])...
+    };
+
+    return 0;
+  } catch (int err) {
+    return err;
+  }
+}
+
+template <bool checked = js_is_debug, typename... T>
+static inline auto
+js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &result) {
+  return js_get_array_elements(env, array, result, std::index_sequence_for<T...>());
+}
+
 template <bool checked = js_is_debug, typename T, size_t N>
 static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, const T values[N], size_t offset = 0) {
@@ -2720,6 +2749,26 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<
   }
 
   return js_set_array_elements(env, array.value, (const js_value_t **) marshalled.data(), len, offset);
+}
+
+template <bool checked = js_is_debug, typename... T, size_t... I>
+static inline auto
+js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T...> &values, size_t offset, std::index_sequence<I...>) {
+  try {
+    js_value_t *values[] = {
+      js_marshall_untyped_value<checked, T>(env, std::get<I>(values))...
+    };
+
+    return js_set_array_elements(env, array.value, (const js_value_t **) values, sizeof...(T), offset);
+  } catch (int err) {
+    return err;
+  }
+}
+
+template <bool checked = js_is_debug, typename... T>
+static inline auto
+js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T...> &values, size_t offset = 0) {
+  return js_set_array_elements<checked>(env, array, values, offset, std::index_sequence_for<T...>());
 }
 
 template <bool checked = js_is_debug, typename T>
