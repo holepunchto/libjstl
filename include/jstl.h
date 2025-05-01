@@ -1548,7 +1548,7 @@ struct js_typed_callback_t;
 
 template <typename R, typename... A, R fn(A...)>
 struct js_typed_callback_t<fn> {
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
@@ -1559,7 +1559,7 @@ struct js_typed_callback_t<fn> {
 
 template <typename R, typename... A, R fn(js_env_t *, A...)>
 struct js_typed_callback_t<fn> {
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
@@ -1601,7 +1601,7 @@ struct js_typed_callback_t<fn> {
 
 template <typename... A, void fn(A...)>
 struct js_typed_callback_t<fn> {
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
@@ -1612,7 +1612,7 @@ struct js_typed_callback_t<fn> {
 
 template <typename... A, void fn(js_env_t *, A...)>
 struct js_typed_callback_t<fn> {
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
@@ -1648,7 +1648,7 @@ struct js_untyped_callback_t;
 
 template <typename R, typename... A, R fn(A...)>
 struct js_untyped_callback_t<fn> {
-  template <bool checked, bool scoped, size_t... I>
+  template <bool scoped, bool checked, size_t... I>
   static inline auto
   create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
@@ -1695,16 +1695,16 @@ struct js_untyped_callback_t<fn> {
     };
   }
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
-    return create<checked, scoped>(std::index_sequence_for<A...>());
+    return create<scoped, checked>(std::index_sequence_for<A...>());
   }
 };
 
 template <typename R, typename... A, R fn(js_env_t *, A...)>
 struct js_untyped_callback_t<fn> {
-  template <bool checked, bool scoped, size_t... I>
+  template <bool scoped, bool checked, size_t... I>
   static inline auto
   create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
@@ -1756,16 +1756,16 @@ struct js_untyped_callback_t<fn> {
     };
   }
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
-    return create<checked, scoped>(std::index_sequence_for<A...>());
+    return create<scoped, checked>(std::index_sequence_for<A...>());
   }
 };
 
 template <typename... A, void fn(A...)>
 struct js_untyped_callback_t<fn> {
-  template <bool checked, bool scoped, size_t... I>
+  template <bool scoped, bool checked, size_t... I>
   static inline auto
   create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
@@ -1810,16 +1810,16 @@ struct js_untyped_callback_t<fn> {
     };
   }
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
-    return create<checked, scoped>(std::index_sequence_for<A...>());
+    return create<scoped, checked>(std::index_sequence_for<A...>());
   }
 };
 
 template <typename... A, void fn(js_env_t *, A...)>
 struct js_untyped_callback_t<fn> {
-  template <bool checked, bool scoped, size_t... I>
+  template <bool scoped, bool checked, size_t... I>
   static inline auto
   create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
@@ -1864,23 +1864,23 @@ struct js_untyped_callback_t<fn> {
     };
   }
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static inline auto
   create() {
-    return create<checked, scoped>(std::index_sequence_for<A...>());
+    return create<scoped, checked>(std::index_sequence_for<A...>());
   }
 };
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_typed_callback() {
-  return js_typed_callback_t<fn>::template create<checked, scoped>();
+  return js_typed_callback_t<fn>::template create<scoped, checked>();
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_untyped_callback() {
-  return js_untyped_callback_t<fn>::template create<checked, scoped>();
+  return js_untyped_callback_t<fn>::template create<scoped, checked>();
 }
 
 template <auto fn>
@@ -1890,12 +1890,12 @@ template <typename R, typename... A, R fn(A...)>
 struct js_function_info_t<fn> {
   using type = js_function_t<R, A...>;
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
-    auto typed = js_typed_callback<fn, checked, scoped>();
+    auto typed = js_typed_callback<fn, scoped, checked>();
 
-    auto untyped = js_untyped_callback<fn, checked, scoped>();
+    auto untyped = js_untyped_callback<fn, scoped, checked>();
 
     js_callback_signature_t signature;
 
@@ -1911,13 +1911,13 @@ struct js_function_info_t<fn> {
     return js_create_typed_function(env, name, len, untyped, &signature, (const void *) typed, nullptr, &result.value);
   }
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_handle_t &result) {
     int err;
 
     js_function_t<R, A...> value;
-    err = marshall<checked, scoped>(env, name, len, value);
+    err = marshall<scoped, checked>(env, name, len, value);
     if (err < 0) return err;
 
     result = value;
@@ -1930,12 +1930,12 @@ template <typename R, typename... A, R fn(js_env_t *, A...)>
 struct js_function_info_t<fn> {
   using type = js_function_t<R, A...>;
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
-    auto typed = js_typed_callback<fn, checked, scoped>();
+    auto typed = js_typed_callback<fn, scoped, checked>();
 
-    auto untyped = js_untyped_callback<fn, checked, scoped>();
+    auto untyped = js_untyped_callback<fn, scoped, checked>();
 
     js_callback_signature_t signature;
 
@@ -1951,13 +1951,13 @@ struct js_function_info_t<fn> {
     return js_create_typed_function(env, name, len, untyped, &signature, (const void *) typed, nullptr, &result.value);
   }
 
-  template <bool checked, bool scoped>
+  template <bool scoped, bool checked>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_handle_t &result) {
     int err;
 
     js_function_t<R, A...> value;
-    err = marshall<checked, scoped>(env, name, len, value);
+    err = marshall<scoped, checked>(env, name, len, value);
     if (err < 0) return err;
 
     result = value;
@@ -1966,40 +1966,40 @@ struct js_function_info_t<fn> {
   }
 };
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_create_function(js_env_t *env, const char *name, size_t len, typename js_function_info_t<fn>::type &result) {
-  return js_function_info_t<fn>::template marshall<checked, scoped>(env, name, len, result);
+  return js_function_info_t<fn>::template marshall<scoped, checked>(env, name, len, result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_create_function(js_env_t *env, const std::string &name, typename js_function_info_t<fn>::type &result) {
-  return js_function_info_t<fn>::template marshall<checked, scoped>(env, name.data(), name.size(), result);
+  return js_function_info_t<fn>::template marshall<scoped, checked>(env, name.data(), name.size(), result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_create_function(js_env_t *env, typename js_function_info_t<fn>::type &result) {
-  return js_function_info_t<fn>::template marshall<checked, scoped>(env, nullptr, 0, result);
+  return js_function_info_t<fn>::template marshall<scoped, checked>(env, nullptr, 0, result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_create_function(js_env_t *env, const char *name, size_t len, js_handle_t &result) {
-  return js_function_info_t<fn>::template marshall<checked, scoped>(env, name, len, result);
+  return js_function_info_t<fn>::template marshall<scoped, checked>(env, name, len, result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_create_function(js_env_t *env, std::string name, js_handle_t &result) {
-  return js_function_info_t<fn>::template marshall<checked, scoped>(env, name.data(), name.length(), result);
+  return js_function_info_t<fn>::template marshall<scoped, checked>(env, name.data(), name.length(), result);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_create_function(js_env_t *env, js_handle_t &result) {
-  return js_function_info_t<fn>::template marshall<checked, scoped>(env, nullptr, 0, result);
+  return js_function_info_t<fn>::template marshall<scoped, checked>(env, nullptr, 0, result);
 }
 
 template <bool checked = js_is_debug, typename... A>
@@ -2542,25 +2542,25 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, cons
   return js_set_named_property(env, object.value, name, marshalled);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name) {
   int err;
 
   js_handle_t value;
-  err = js_function_info_t<fn>::template marshall<checked, scoped>(env, nullptr, 0, value);
+  err = js_function_info_t<fn>::template marshall<scoped, checked>(env, nullptr, 0, value);
   if (err < 0) return err;
 
   return js_set_property(env, object, name, value);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
   int err;
 
   js_handle_t value;
-  err = js_function_info_t<fn>::template marshall<checked, scoped>(env, name, -1, value);
+  err = js_function_info_t<fn>::template marshall<scoped, checked>(env, name, -1, value);
   if (err < 0) return err;
 
   return js_set_named_property(env, object, name, value);
@@ -2600,13 +2600,13 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index, const T
   return js_set_element(env, object.value, index, marshalled);
 }
 
-template <auto fn, bool checked = js_is_debug, bool scoped = true>
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_set_element(js_env_t *env, const js_object_t &object, uint32_t index) {
   int err;
 
   js_handle_t value;
-  err = js_function_info_t<fn>::template marshall<checked, scoped>(env, nullptr, 0, value);
+  err = js_function_info_t<fn>::template marshall<scoped, checked>(env, nullptr, 0, value);
   if (err < 0) return err;
 
   return js_set_element(env, object, index, value);
