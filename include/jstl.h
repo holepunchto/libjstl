@@ -784,7 +784,7 @@ struct js_arraybuffer_span_t {
     return data_[i];
   }
 
-  const uint8_t &
+  const uint8_t
   operator[](size_t i) const {
     return data_[i];
   }
@@ -898,7 +898,7 @@ struct js_typedarray_span_t {
     return data_[i];
   }
 
-  const T &
+  const T
   operator[](size_t i) const {
     return data_[i];
   }
