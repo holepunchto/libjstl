@@ -780,12 +780,12 @@ struct js_arraybuffer_span_t {
   js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil : data), size_(len) {}
 
   uint8_t &
-  operator[](const size_t i) {
+  operator[](size_t i) {
     return data_[i];
   }
 
   const uint8_t &
-  operator[](const size_t i) const {
+  operator[](size_t i) const {
     return data_[i];
   }
 
@@ -894,12 +894,12 @@ struct js_typedarray_span_t {
   js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
 
   T &
-  operator[](const size_t i) {
+  operator[](size_t i) {
     return data_[i];
   }
 
   const T &
-  operator[](const size_t i) const {
+  operator[](size_t i) const {
     return data_[i];
   }
 
