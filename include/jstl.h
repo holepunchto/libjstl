@@ -768,10 +768,46 @@ struct js_type_info_t<js_arraybuffer_t> {
   }
 };
 
-struct js_arraybuffer_span_t : std::span<uint8_t> {
-  js_arraybuffer_span_t() : std::span<uint8_t>() {}
+namespace {
 
-  js_arraybuffer_span_t(uint8_t *data, size_t len) : std::span<uint8_t>(data, len) {}
+static uint8_t js_arraybuffer_span_nil[1] = {0};
+
+}
+
+struct js_arraybuffer_span_t {
+  js_arraybuffer_span_t() : data_(nullptr), size_(0) {}
+
+  js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil : data), size_(len) {}
+
+  uint8_t &
+  operator[](const size_t i) {
+    return data_[i];
+  }
+
+  const uint8_t &
+  operator[](const size_t i) const {
+    return data_[i];
+  }
+
+  uint8_t *data() const {
+    return data_;
+  }
+
+  size_t size() const {
+    return size_;
+  }
+
+  uint8_t *begin() const {
+    return data_;
+  }
+
+  uint8_t *end() const {
+    return data_ + size_;
+  }
+
+private:
+  uint8_t *data_;
+  size_t size_;
 };
 
 template <>
@@ -844,11 +880,52 @@ struct js_type_info_t<js_typedarray_t<T>> {
   }
 };
 
-template <typename T>
-struct js_typedarray_span_t : std::span<T> {
-  js_typedarray_span_t() : std::span<T>() {}
+namespace {
 
-  js_typedarray_span_t(T *data, size_t len) : std::span<T>(data, len) {}
+template <typename T>
+static T js_typedarray_span_nil[1] = {T(0)};
+
+}
+
+template <typename T>
+struct js_typedarray_span_t {
+  js_typedarray_span_t() : data_(nullptr), size_(0) {}
+
+  js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
+
+  T &
+  operator[](const size_t i) {
+    return data_[i];
+  }
+
+  const T &
+  operator[](const size_t i) const {
+    return data_[i];
+  }
+
+  T *data() const {
+    return data_;
+  }
+
+  size_t size() const {
+    return size_;
+  }
+
+  size_t size_bytes() const {
+    return size_ * sizeof(T);
+  }
+
+  T *begin() const {
+    return data_;
+  }
+
+  T *end() const {
+    return data_ + size_;
+  }
+
+private:
+  T *data_;
+  size_t size_;
 };
 
 template <typename T>
