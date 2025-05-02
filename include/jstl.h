@@ -797,6 +797,10 @@ struct js_arraybuffer_span_t {
     return size_;
   }
 
+  bool empty() const {
+    return size_ == 0;
+  }
+
   uint8_t *begin() const {
     return data_;
   }
@@ -913,6 +917,10 @@ struct js_typedarray_span_t {
 
   size_t size_bytes() const {
     return size_ * sizeof(T);
+  }
+
+  bool empty() const {
+    return size_ == 0;
   }
 
   T *begin() const {
