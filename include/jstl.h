@@ -775,7 +775,7 @@ static uint8_t js_arraybuffer_span_nil[1] = {0};
 }
 
 struct js_arraybuffer_span_t {
-  js_arraybuffer_span_t() : data_(nullptr), size_(0) {}
+  js_arraybuffer_span_t() : data_(js_arraybuffer_span_nil), size_(0) {}
 
   js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil : data), size_(len) {}
 
@@ -889,7 +889,7 @@ static T js_typedarray_span_nil[1] = {T(0)};
 
 template <typename T>
 struct js_typedarray_span_t {
-  js_typedarray_span_t() : data_(nullptr), size_(0) {}
+  js_typedarray_span_t() : data_(js_typedarray_span_nil<T>), size_(0) {}
 
   js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
 
