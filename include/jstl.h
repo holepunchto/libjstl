@@ -1660,6 +1660,50 @@ struct js_typed_callback_t<fn> {
   template <bool scoped, bool checked>
   static inline auto
   create() {
+    if constexpr (scoped) {
+      if constexpr (std::is_same<typename js_type_info_t<R>::type, js_value_t *>()) {
+        return create_with_escapable_scope<checked>();
+      } else {
+        return create_with_scope<checked>();
+      }
+    } else {
+      return create_without_scope<checked>();
+    }
+  }
+
+private:
+  template <bool checked>
+  static inline auto
+  create_with_scope() {
+    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
+      int err;
+
+      js_env_t *env;
+      err = js_get_typed_callback_info(info, &env, nullptr);
+      assert(err == 0);
+
+      js_handle_scope_t *scope;
+      err = js_open_handle_scope(env, &scope);
+      assert(err == 0);
+
+      typename js_type_info_t<R>::type result;
+
+      try {
+        result = js_marshall_typed_value<checked, R>(env, fn(env, js_unmarshall_typed_value<checked, A>(env, args)...));
+      } catch (int err) {
+        assert(err != 0);
+      }
+
+      err = js_close_handle_scope(env, scope);
+      assert(err == 0);
+
+      return result;
+    };
+  }
+
+  template <bool checked>
+  static inline auto
+  create_with_escapable_scope() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
 
@@ -1668,31 +1712,38 @@ struct js_typed_callback_t<fn> {
       assert(err == 0);
 
       js_escapable_handle_scope_t *scope;
-
-      if constexpr (scoped) {
-        err = js_open_escapable_handle_scope(env, &scope);
-        assert(err == 0);
-      }
+      err = js_open_escapable_handle_scope(env, &scope);
+      assert(err == 0);
 
       typename js_type_info_t<R>::type result;
 
       try {
         result = js_marshall_typed_value<checked, R>(env, fn(env, js_unmarshall_typed_value<checked, A>(env, args)...));
 
-        if constexpr (scoped && std::is_same<decltype(result), js_value_t *>()) {
-          err = js_escape_handle(env, scope, result, &result);
-          assert(err == 0);
-        }
+        err = js_escape_handle(env, scope, result, &result);
+        assert(err == 0);
       } catch (int err) {
         assert(err != 0);
       }
 
-      if constexpr (scoped) {
-        err = js_close_escapable_handle_scope(env, scope);
-        assert(err == 0);
-      }
+      err = js_close_escapable_handle_scope(env, scope);
+      assert(err == 0);
 
       return result;
+    };
+  }
+
+  template <bool checked>
+  static inline auto
+  create_without_scope() {
+    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
+      int err;
+
+      js_env_t *env;
+      err = js_get_typed_callback_info(info, &env, nullptr);
+      assert(err == 0);
+
+      return js_marshall_typed_value<checked, R>(env, fn(env, js_unmarshall_typed_value<checked, A>(env, args)...));
     };
   }
 };
