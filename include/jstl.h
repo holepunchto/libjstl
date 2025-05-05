@@ -27,6 +27,8 @@ concept js_typedarray_element_t =
   std::same_as<T, uint16_t> ||
   std::same_as<T, int32_t> ||
   std::same_as<T, uint32_t> ||
+  std::same_as<T, int64_t> ||
+  std::same_as<T, uint64_t> ||
   std::same_as<T, float> ||
   std::same_as<T, double>;
 
