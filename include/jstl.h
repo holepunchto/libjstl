@@ -2903,7 +2903,7 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property) {
 
   js_property_descriptor_t descriptor;
   err = js_create_property_descriptor<checked>(env, property, descriptor);
-  assert(err == 0);
+  if (err < 0) throw err;
 
   return descriptor;
 }
@@ -2911,11 +2911,15 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property) {
 template <bool checked = js_is_debug, typename... T>
 static inline auto
 js_define_properties(js_env_t *env, const js_object_t &object, const js_property_t<T>... properties) {
-  js_property_descriptor_t descriptors[] = {
-    js_create_property_descriptor<checked>(env, properties)...
-  };
+  try {
+    js_property_descriptor_t descriptors[] = {
+      js_create_property_descriptor<checked>(env, properties)...
+    };
 
-  return js_define_properties(env, object.value, descriptors, sizeof...(T));
+    return js_define_properties(env, object.value, descriptors, sizeof...(T));
+  } catch (int err) {
+    return err;
+  }
 }
 
 static inline auto
