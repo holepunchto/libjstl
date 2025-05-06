@@ -1902,15 +1902,26 @@ struct js_type_info_t<std::optional<T>> {
 
 template <typename T>
 struct js_property_t {
-  std::string name;
-  T value;
-
-  js_property_t(const std::string &name, T value) : name(name), value(value) {}
+  js_property_t(const std::string &name, T value) : name_(name), value_(value) {}
 
   template <size_t N>
-  js_property_t(const char name[N], T value) : name(name, N), value(value) {}
+  js_property_t(const char name[N], T value) : name_(name, N), value_(value) {}
 
-  js_property_t(const char *name, T value) : name(name), value(value) {}
+  js_property_t(const char *name, T value) : name_(name), value_(value) {}
+
+  const std::string &
+  name() const {
+    return name_;
+  }
+
+  const T &
+  value() const {
+    return value_;
+  }
+
+private:
+  std::string name_;
+  T value_;
 };
 
 template <typename T>
@@ -3667,12 +3678,12 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, j
   descriptor.getter = nullptr;
   descriptor.setter = nullptr;
 
-  const auto &name = property.name;
+  const auto &name = property.name();
 
   err = js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(name.data()), name.length(), &descriptor.name);
   if (err < 0) return err;
 
-  err = js_type_info_t<T>::template marshall<checked>(env, property, descriptor);
+  err = js_type_info_t<T>::template marshall<checked>(env, property.value(), descriptor.value);
   if (err < 0) return err;
 
   result = descriptor;

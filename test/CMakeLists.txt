@@ -56,6 +56,7 @@ list(APPEND tests
   create-function-return-void-arg-uint16array-typedarray-span-any
   create-function-return-void-arg-uint32
   create-function-return-void-arg-vector-int32
+  create-object-with-properties
   create-reference-get-value
   create-reference-get-value-optional
   create-reference-move-assign
