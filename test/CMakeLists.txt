@@ -15,11 +15,15 @@ list(APPEND tests
   create-function-return-string
   create-function-return-string-literal
   create-function-return-uint8array
+  create-function-return-uint8array-any
   create-function-return-uint8array-span
   create-function-return-uint8array-typedarray-span
+  create-function-return-uint8array-typedarray-span-any
   create-function-return-uint16array
+  create-function-return-uint16array-any
   create-function-return-uint16array-span
   create-function-return-uint16array-typedarray-span
+  create-function-return-uint16array-typedarray-span-any
   create-function-return-uint32
   create-function-return-vector-int32
   create-function-return-void
@@ -37,11 +41,15 @@ list(APPEND tests
   create-function-return-void-arg-tuple-int32
   create-function-return-void-arg-tuple-int32-string
   create-function-return-void-arg-uint8array
+  create-function-return-void-arg-uint8array-any
   create-function-return-void-arg-uint8array-span
   create-function-return-void-arg-uint8array-typedarray-span
+  create-function-return-void-arg-uint8array-typedarray-span-any
   create-function-return-void-arg-uint16array
+  create-function-return-void-arg-uint16array-any
   create-function-return-void-arg-uint16array-span
   create-function-return-void-arg-uint16array-typedarray-span
+  create-function-return-void-arg-uint16array-typedarray-span-any
   create-function-return-void-arg-uint32
   create-function-return-void-arg-vector-int32
   create-reference-get-value
@@ -49,6 +57,7 @@ list(APPEND tests
   create-reference-move-assign
   create-typedarray-data-cast
   create-typedarray-get-info
+  create-typedarray-get-info-any
   create-typedarray-get-info-copy
   create-typedarray-get-info-move-assign
   get-typedarray-info-data-cast

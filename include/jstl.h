@@ -32,6 +32,8 @@ concept js_typedarray_element_t =
   std::same_as<T, float> ||
   std::same_as<T, double>;
 
+struct js_typedarray_element_any_t;
+
 struct js_handle_t {
   js_value_t *value;
 
@@ -122,7 +124,7 @@ struct js_arraybuffer_t : js_object_t {
   js_arraybuffer_t(js_value_t *value) : js_object_t(value) {}
 };
 
-template <js_typedarray_element_t T>
+template <typename T = js_typedarray_element_any_t>
 struct js_typedarray_t : js_object_t {
   js_typedarray_t() : js_object_t() {}
 
@@ -330,7 +332,17 @@ struct js_typedarray_info_t<double> {
   }
 };
 
-template <typename T>
+template <>
+struct js_typedarray_info_t<js_typedarray_element_any_t> {
+  static constexpr auto label = "typedarray";
+
+  static auto
+  is(js_env_t *env, const js_handle_t &value, bool &result) {
+    return js_is_typedarray(env, value.value, &result);
+  }
+};
+
+template <typename T = js_typedarray_element_any_t>
 static inline auto
 js_is_typedarray(js_env_t *env, const js_handle_t &value, bool &result) {
   return js_typedarray_info_t<T>::is(env, value, result);
@@ -802,23 +814,39 @@ struct js_arraybuffer_span_t {
     return data_[i];
   }
 
-  uint8_t *data() const {
+  uint8_t *
+  data() const {
     return data_;
   }
 
-  size_t size() const {
+  size_t
+  size() const {
     return size_;
   }
 
-  bool empty() const {
+  template <typename T>
+  size_t
+  size() const {
+    return size_ / sizeof(T);
+  }
+
+  size_t
+  size_bytes() const {
+    return size_;
+  }
+
+  bool
+  empty() const {
     return size_ == 0;
   }
 
-  uint8_t *begin() const {
+  uint8_t *
+  begin() const {
     return data_;
   }
 
-  uint8_t *end() const {
+  uint8_t *
+  end() const {
     return data_ + size_;
   }
 
@@ -897,6 +925,58 @@ struct js_type_info_t<js_typedarray_t<T>> {
   }
 };
 
+template <>
+struct js_type_info_t<js_typedarray_t<>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *, const js_typedarray_t<> &typedarray, js_value_t *&result) {
+    result = typedarray.value;
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_typedarray_t<> &result) {
+    if constexpr (checked) {
+      int err;
+      err = js_check_value<js_is_typedarray<>>(env, value, "typedarray");
+      if (err < 0) return err;
+    }
+
+    result = js_typedarray_t<>(value);
+
+    return 0;
+  }
+};
+
+static inline size_t
+js_typedarray_element_size(js_typedarray_type_t type) {
+  switch (type) {
+  case js_int8array:
+  case js_uint8array:
+  case js_uint8clampedarray:
+  default:
+    return 1;
+  case js_int16array:
+  case js_uint16array:
+  case js_float16array:
+    return 2;
+  case js_int32array:
+  case js_uint32array:
+  case js_float32array:
+    return 4;
+  case js_bigint64array:
+  case js_biguint64array:
+  case js_float64array:
+    return 8;
+  }
+}
+
 namespace {
 
 template <typename T>
@@ -904,8 +984,11 @@ static T js_typedarray_span_nil[1] = {T(0)};
 
 }
 
-template <typename T>
-struct js_typedarray_span_t {
+template <typename T = js_typedarray_element_any_t>
+struct js_typedarray_span_t;
+
+template <js_typedarray_element_t T>
+struct js_typedarray_span_t<T> {
   js_typedarray_span_t() : data_(js_typedarray_span_nil<T>), size_(0) {}
 
   js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
@@ -920,27 +1003,39 @@ struct js_typedarray_span_t {
     return data_[i];
   }
 
-  T *data() const {
+  T *
+  data() const {
     return data_;
   }
 
-  size_t size() const {
+  size_t
+  size() const {
     return size_;
   }
 
-  size_t size_bytes() const {
+  template <typename U>
+  size_t
+  size() const {
+    return size_ * sizeof(T) / sizeof(U);
+  }
+
+  size_t
+  size_bytes() const {
     return size_ * sizeof(T);
   }
 
-  bool empty() const {
+  bool
+  empty() const {
     return size_ == 0;
   }
 
-  T *begin() const {
+  T *
+  begin() const {
     return data_;
   }
 
-  T *end() const {
+  T *
+  end() const {
     return data_ + size_;
   }
 
@@ -948,6 +1043,57 @@ private:
   T *data_;
   size_t size_;
 };
+
+template <js_typedarray_element_t T>
+js_typedarray_span_t(T *data, size_t len) -> js_typedarray_span_t<T>;
+
+template <>
+struct js_typedarray_span_t<js_typedarray_element_any_t> {
+  js_typedarray_span_t() : data_(nullptr), size_(0), element_size_(1) {}
+
+  js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) : data_(len == 0 ? nullptr : data), size_(len), element_size_(js_typedarray_element_size(type)) {}
+
+  template <typename T = uint8_t>
+  T *
+  data() const {
+    return static_cast<T *>(data_);
+  }
+
+  template <typename T = uint8_t>
+  size_t
+  size() const {
+    return size_ * element_size_ / sizeof(T);
+  }
+
+  size_t
+  size_bytes() const {
+    return size_ * element_size_;
+  }
+
+  bool
+  empty() const {
+    return size_ == 0;
+  }
+
+  template <typename T = uint8_t>
+  T *
+  begin() const {
+    return data<T>();
+  }
+
+  template <typename T = uint8_t>
+  T *
+  end() const {
+    return data<T>() + size<T>();
+  }
+
+private:
+  void *data_;
+  size_t size_;
+  size_t element_size_;
+};
+
+js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) -> js_typedarray_span_t<js_typedarray_element_any_t>;
 
 template <typename T>
 struct js_type_info_t<js_typedarray_span_t<T>> {
@@ -987,6 +1133,50 @@ struct js_type_info_t<js_typedarray_span_t<T>> {
     if (err < 0) return err;
 
     result = js_typedarray_span_t(data, len);
+
+    return 0;
+  }
+};
+
+template <>
+struct js_type_info_t<js_typedarray_span_t<>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const js_typedarray_span_t<> &view, js_value_t *&result) {
+    int err;
+
+    js_value_t *arraybuffer;
+
+    void *data;
+    err = js_create_arraybuffer(env, view.size_bytes(), &data, &arraybuffer);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), (uint8_t *) data);
+
+    return js_create_typedarray(env, js_uint8array, view.size(), arraybuffer, 0, &result);
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_typedarray_span_t<> &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_typedarray<>>(env, value, "typedarray");
+      if (err < 0) return err;
+    }
+
+    void *data;
+    size_t len;
+    js_typedarray_type_t type;
+    err = js_get_typedarray_info(env, value, &type, (void **) &data, &len, nullptr, nullptr);
+    if (err < 0) return err;
+
+    result = js_typedarray_span_t(data, len, type);
 
     return 0;
   }
@@ -2465,9 +2655,19 @@ js_create_typedarray(js_env_t *env, size_t len, const js_arraybuffer_t &arraybuf
   return js_create_typedarray(env, js_typedarray_info_t<T>::type, len, arraybuffer.value, offset, &result.value);
 }
 
+static inline auto
+js_create_typedarray(js_env_t *env, size_t len, const js_arraybuffer_t &arraybuffer, size_t offset, js_typedarray_t<> &result) {
+  return js_create_typedarray(env, js_uint8array, len, arraybuffer.value, offset, &result.value);
+}
+
 template <js_typedarray_element_t T>
 static inline auto
 js_create_typedarray(js_env_t *env, size_t len, const js_arraybuffer_t &arraybuffer, js_typedarray_t<T> &result) {
+  return js_create_typedarray(env, len, arraybuffer, 0, result);
+}
+
+static inline auto
+js_create_typedarray(js_env_t *env, size_t len, const js_arraybuffer_t &arraybuffer, js_typedarray_t<> &result) {
   return js_create_typedarray(env, len, arraybuffer, 0, result);
 }
 
@@ -2483,6 +2683,18 @@ js_create_typedarray(js_env_t *env, size_t len, T *&data, js_typedarray_t<T> &re
   return js_create_typedarray(env, len, arraybuffer, result);
 }
 
+template <typename T>
+static inline auto
+js_create_typedarray(js_env_t *env, size_t len, T *&data, js_typedarray_t<> &result) {
+  int err;
+
+  js_arraybuffer_t arraybuffer;
+  err = js_create_arraybuffer(env, len, data, arraybuffer);
+  if (err < 0) return err;
+
+  return js_create_typedarray(env, len * sizeof(T), arraybuffer, result);
+}
+
 template <js_typedarray_element_t T>
 static inline auto
 js_create_typedarray(js_env_t *env, size_t len, std::span<T> &view, js_typedarray_t<T> &result) {
@@ -2495,6 +2707,18 @@ js_create_typedarray(js_env_t *env, size_t len, std::span<T> &view, js_typedarra
   return js_create_typedarray(env, len, arraybuffer, result);
 }
 
+template <typename T>
+static inline auto
+js_create_typedarray(js_env_t *env, size_t len, std::span<T> &view, js_typedarray_t<> &result) {
+  int err;
+
+  js_arraybuffer_t arraybuffer;
+  err = js_create_arraybuffer(env, len, view, arraybuffer);
+  if (err < 0) return err;
+
+  return js_create_typedarray(env, len * sizeof(T), arraybuffer, result);
+}
+
 template <js_typedarray_element_t T>
 static inline auto
 js_create_typedarray(js_env_t *env, size_t len, js_typedarray_t<T> &result) {
@@ -2502,6 +2726,17 @@ js_create_typedarray(js_env_t *env, size_t len, js_typedarray_t<T> &result) {
 
   js_arraybuffer_t arraybuffer;
   err = js_create_arraybuffer<T>(env, len, arraybuffer);
+  if (err < 0) return err;
+
+  return js_create_typedarray(env, len, arraybuffer, result);
+}
+
+static inline auto
+js_create_typedarray(js_env_t *env, size_t len, js_typedarray_t<> &result) {
+  int err;
+
+  js_arraybuffer_t arraybuffer;
+  err = js_create_arraybuffer(env, len, arraybuffer);
   if (err < 0) return err;
 
   return js_create_typedarray(env, len, arraybuffer, result);
@@ -2533,9 +2768,37 @@ js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<T> &result)
   return 0;
 }
 
+template <typename T, size_t N>
+static inline auto
+js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<> &result) {
+  int err;
+
+  std::span<T> view;
+  err = js_create_typedarray(env, N, view, result);
+  if (err < 0) return err;
+
+  std::copy(data, data + N, view.begin());
+
+  return 0;
+}
+
 template <js_typedarray_element_t T, size_t N>
 static inline auto
 js_create_typedarray(js_env_t *env, const std::array<T, N> data, js_typedarray_t<T> &result) {
+  int err;
+
+  std::span<T> view;
+  err = js_create_typedarray(env, N, view, result);
+  if (err < 0) return err;
+
+  std::copy(data.begin(), data.end(), view.begin());
+
+  return 0;
+}
+
+template <typename T, size_t N>
+static inline auto
+js_create_typedarray(js_env_t *env, const std::array<T, N> data, js_typedarray_t<> &result) {
   int err;
 
   std::span<T> view;
@@ -2561,9 +2824,37 @@ js_create_typedarray(js_env_t *env, const std::span<T> &data, js_typedarray_t<T>
   return 0;
 }
 
+template <typename T>
+static inline auto
+js_create_typedarray(js_env_t *env, const std::span<T> &data, js_typedarray_t<> &result) {
+  int err;
+
+  std::span<T> view;
+  err = js_create_typedarray(env, data.size(), view, result);
+  if (err < 0) return err;
+
+  std::copy(data.begin(), data.end(), view.begin());
+
+  return 0;
+}
+
 template <js_typedarray_element_t T>
 static inline auto
 js_create_typedarray(js_env_t *env, const std::vector<T> &data, js_typedarray_t<T> &result) {
+  int err;
+
+  std::span<T> view;
+  err = js_create_typedarray(env, data.size(), view, result);
+  if (err < 0) return err;
+
+  std::copy(data.begin(), data.end(), view.begin());
+
+  return 0;
+}
+
+template <typename T>
+static inline auto
+js_create_typedarray(js_env_t *env, const std::vector<T> &data, js_typedarray_t<> &result) {
   int err;
 
   std::span<T> view;
@@ -2620,13 +2911,27 @@ js_get_arraybuffer_info(js_env_t *env, const js_arraybuffer_t &arraybuffer, std:
 
 template <js_typedarray_element_t T>
 static inline auto
-js_get_typedarray_info(js_env_t *env, js_typedarray_t<T> &typedarray, T *&data, size_t &len) {
+js_get_typedarray_info(js_env_t *env, const js_typedarray_t<T> &typedarray, T *&data, size_t &len) {
   return js_get_typedarray_info(env, typedarray.value, nullptr, (void **) &data, &len, nullptr, nullptr);
 }
 
 template <typename T>
 static inline auto
-js_get_typedarray_info(js_env_t *env, js_typedarray_t<uint8_t> &typedarray, T *&data) {
+js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, T *&data, size_t &len) {
+  int err;
+
+  js_typedarray_type_t type;
+  err = js_get_typedarray_info(env, typedarray.value, &type, (void **) &data, &len, nullptr, nullptr);
+  if (err < 0) return err;
+
+  len = len * js_typedarray_element_size(type) / sizeof(T);
+
+  return 0;
+}
+
+template <typename T>
+static inline auto
+js_get_typedarray_info(js_env_t *env, const js_typedarray_t<uint8_t> &typedarray, T *&data) {
   int err;
 
   size_t len;
@@ -2640,7 +2945,22 @@ js_get_typedarray_info(js_env_t *env, js_typedarray_t<uint8_t> &typedarray, T *&
 
 template <js_typedarray_element_t T>
 static inline auto
-js_get_typedarray_info(js_env_t *env, js_typedarray_t<T> &typedarray, std::span<T> &view) {
+js_get_typedarray_info(js_env_t *env, const js_typedarray_t<T> &typedarray, std::span<T> &view) {
+  int err;
+
+  T *data;
+  size_t len;
+  err = js_get_typedarray_info(env, typedarray, data, len);
+  if (err < 0) return err;
+
+  view = std::span(data, len);
+
+  return 0;
+}
+
+template <typename T>
+static inline auto
+js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, std::span<T> &view) {
   int err;
 
   T *data;
