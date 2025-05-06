@@ -1166,7 +1166,7 @@ struct js_type_info_t<js_typedarray_span_t<>> {
 
     std::copy(view.begin(), view.end(), (uint8_t *) data);
 
-    return js_create_typedarray(env, js_uint8array, view.size(), arraybuffer, 0, &result);
+    return js_create_typedarray(env, js_uint8array, view.size_bytes(), arraybuffer, 0, &result);
   }
 
   template <bool checked>
