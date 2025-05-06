@@ -867,7 +867,7 @@ struct js_type_info_t<js_arraybuffer_span_t> {
     int err;
 
     uint8_t *data;
-    err = js_create_arraybuffer(env, view.size(), (void **) &data, &result);
+    err = js_create_arraybuffer(env, view.size(), reinterpret_cast<void **>(&data), &result);
     if (err < 0) return err;
 
     std::copy(view.begin(), view.end(), data);
@@ -887,7 +887,7 @@ struct js_type_info_t<js_arraybuffer_span_t> {
 
     uint8_t *data;
     size_t len;
-    err = js_get_arraybuffer_info(env, value, (void **) &data, &len);
+    err = js_get_arraybuffer_info(env, value, reinterpret_cast<void **>(&data), &len);
     if (err < 0) return err;
 
     result = js_arraybuffer_span_t(data, len);
@@ -1118,7 +1118,7 @@ struct js_type_info_t<js_typedarray_span_t<T>> {
     js_value_t *arraybuffer;
 
     T *data;
-    err = js_create_arraybuffer(env, view.size_bytes(), (void **) &data, &arraybuffer);
+    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
     if (err < 0) return err;
 
     std::copy(view.begin(), view.end(), data);
@@ -1138,7 +1138,7 @@ struct js_type_info_t<js_typedarray_span_t<T>> {
 
     T *data;
     size_t len;
-    err = js_get_typedarray_info(env, value, nullptr, (void **) &data, &len, nullptr, nullptr);
+    err = js_get_typedarray_info(env, value, nullptr, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
     if (err < 0) return err;
 
     result = js_typedarray_span_t(data, len);
@@ -1164,7 +1164,7 @@ struct js_type_info_t<js_typedarray_span_t<>> {
     err = js_create_arraybuffer(env, view.size_bytes(), &data, &arraybuffer);
     if (err < 0) return err;
 
-    std::copy(view.begin(), view.end(), (uint8_t *) data);
+    std::copy(view.begin(), view.end(), static_cast<uint8_t *>(data));
 
     return js_create_typedarray(env, js_uint8array, view.size_bytes(), arraybuffer, 0, &result);
   }
@@ -1182,7 +1182,7 @@ struct js_type_info_t<js_typedarray_span_t<>> {
     void *data;
     size_t len;
     js_typedarray_type_t type;
-    err = js_get_typedarray_info(env, value, &type, (void **) &data, &len, nullptr, nullptr);
+    err = js_get_typedarray_info(env, value, &type, &data, &len, nullptr, nullptr);
     if (err < 0) return err;
 
     result = js_typedarray_span_t(data, len, type);
@@ -1296,7 +1296,7 @@ struct js_type_info_t<T *> {
   template <bool checked>
   static auto
   marshall(js_env_t *env, T *value, js_value_t *&result) {
-    return js_create_external(env, (void *) value, nullptr, nullptr, &result);
+    return js_create_external(env, reinterpret_cast<void *>(value), nullptr, nullptr, &result);
   }
 
   static auto
@@ -1321,7 +1321,7 @@ struct js_type_info_t<T *> {
       if (err < 0) return err;
     }
 
-    return js_get_value_external(env, value, (void **) &result);
+    return js_get_value_external(env, value, reinterpret_cast<void **>(&result));
   }
 };
 
@@ -1334,7 +1334,7 @@ struct js_type_info_t<char[N]> {
   template <bool checked>
   static auto
   marshall(js_env_t *env, const char value[N], js_value_t *&result) {
-    return js_create_string_utf8(env, (const utf8_t *) value, N, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N, &result);
   }
 
   template <bool checked>
@@ -1348,7 +1348,7 @@ struct js_type_info_t<char[N]> {
     }
 
     size_t len;
-    err = js_get_value_string_utf8(env, value, (utf8_t *) result, N, &len);
+    err = js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result), N, &len);
     if (err < 0) return err;
 
     assert(len == N);
@@ -1366,7 +1366,7 @@ struct js_type_info_t<const char[N]> {
   template <bool checked>
   static auto
   marshall(js_env_t *env, const char value[N], js_value_t *&result) {
-    return js_create_string_utf8(env, (const utf8_t *) value, N, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N, &result);
   }
 };
 
@@ -1379,7 +1379,7 @@ struct js_type_info_t<char *> {
   template <bool checked>
   static auto
   marshall(js_env_t *env, const char *value, js_value_t *&result) {
-    return js_create_string_utf8(env, (const utf8_t *) value, -1, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
   }
 };
 
@@ -1392,7 +1392,7 @@ struct js_type_info_t<const char *> {
   template <bool checked>
   static auto
   marshall(js_env_t *env, const char *value, js_value_t *&result) {
-    return js_create_string_utf8(env, (const utf8_t *) value, -1, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
   }
 };
 
@@ -1405,7 +1405,7 @@ struct js_type_info_t<std::string> {
   template <bool checked>
   static auto
   marshall(js_env_t *env, const std::string &value, js_value_t *&result) {
-    return js_create_string_utf8(env, (const utf8_t *) value.data(), value.length(), &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value.data()), value.length(), &result);
   }
 
   template <bool checked>
@@ -1424,7 +1424,7 @@ struct js_type_info_t<std::string> {
 
     result.resize(len);
 
-    return js_get_value_string_utf8(env, value, (utf8_t *) result.data(), result.length(), nullptr);
+    return js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result.data()), result.length(), nullptr);
   }
 };
 
@@ -1449,7 +1449,7 @@ struct js_type_info_t<T[N]> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, (const js_value_t **) values, N, 0);
+    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), N, 0);
   }
 
   template <bool checked>
@@ -1499,7 +1499,7 @@ struct js_type_info_t<std::array<T, N>> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, (const js_value_t **) values, N, 0);
+    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), N, 0);
   }
 
   template <bool checked>
@@ -1551,7 +1551,7 @@ struct js_type_info_t<std::vector<T>> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, (const js_value_t **) values.data(), len, 0);
+    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values.data()), len, 0);
   }
 
   template <bool checked>
@@ -1601,7 +1601,7 @@ struct js_type_info_t<std::tuple<T...>> {
         js_marshall_untyped_value<checked, T>(env, std::get<I>(tuple))...
       };
 
-      return js_set_array_elements(env, result, (const js_value_t **) values, sizeof...(T), 0);
+      return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), sizeof...(T), 0);
     } catch (int err) {
       return err;
     }
@@ -1662,7 +1662,7 @@ struct js_type_info_t<std::span<T>> {
     js_value_t *arraybuffer;
 
     T *data;
-    err = js_create_arraybuffer(env, view.size_bytes(), (void **) &data, &arraybuffer);
+    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
     if (err < 0) return err;
 
     std::copy(view.begin(), view.end(), data);
@@ -1682,7 +1682,7 @@ struct js_type_info_t<std::span<T>> {
 
     T *data;
     size_t len;
-    err = js_get_typedarray_info(env, value, nullptr, (void **) &data, &len, nullptr, nullptr);
+    err = js_get_typedarray_info(env, value, nullptr, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
     if (err < 0) return err;
 
     result = std::span(data, len);
@@ -2324,7 +2324,7 @@ struct js_function_info_t<fn> {
     signature.args_len = sizeof...(A);
     signature.args = args;
 
-    return js_create_typed_function(env, name, len, untyped, &signature, (const void *) typed, nullptr, &result.value);
+    return js_create_typed_function(env, name, len, untyped, &signature, reinterpret_cast<const void *>(typed), nullptr, &result.value);
   }
 
   template <bool scoped, bool checked>
@@ -2364,7 +2364,7 @@ struct js_function_info_t<fn> {
     signature.args_len = sizeof...(A);
     signature.args = args;
 
-    return js_create_typed_function(env, name, len, untyped, &signature, (const void *) typed, nullptr, &result.value);
+    return js_create_typed_function(env, name, len, untyped, &signature, reinterpret_cast<const void *>(typed), nullptr, &result.value);
   }
 
   template <bool scoped, bool checked>
@@ -2562,19 +2562,19 @@ js_create_string(js_env_t *env, const utf8_t *value, size_t len, js_string_t &re
 
 static inline auto
 js_create_string(js_env_t *env, const std::string &value, js_string_t &result) {
-  return js_create_string_utf8(env, (const utf8_t *) value.data(), value.length(), &result.value);
+  return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value.data()), value.length(), &result.value);
 }
 
 template <typename T>
 static inline auto
 js_create_arraybuffer(js_env_t *env, size_t len, T *&data, js_arraybuffer_t &result) {
-  return js_create_arraybuffer(env, len * sizeof(T), (void **) &data, &result.value);
+  return js_create_arraybuffer(env, len * sizeof(T), reinterpret_cast<void **>(&data), &result.value);
 }
 
 template <typename T>
 static inline auto
 js_create_arraybuffer(js_env_t *env, T *&data, js_arraybuffer_t &result) {
-  return js_create_arraybuffer(env, sizeof(T), (void **) &data, &result.value);
+  return js_create_arraybuffer(env, sizeof(T), reinterpret_cast<void **>(&data), &result.value);
 }
 
 static inline auto
@@ -2879,7 +2879,7 @@ template <typename T>
 static inline auto
 js_get_arraybuffer_info(js_env_t *env, const js_arraybuffer_t &arraybuffer, T *&data, size_t &len) {
   int err;
-  err = js_get_arraybuffer_info(env, arraybuffer.value, (void **) &data, &len);
+  err = js_get_arraybuffer_info(env, arraybuffer.value, reinterpret_cast<void **>(&data), &len);
   if (err < 0) return err;
 
   assert(len % sizeof(T) == 0);
@@ -2895,7 +2895,7 @@ js_get_arraybuffer_info(js_env_t *env, const js_arraybuffer_t &arraybuffer, T *&
   int err;
 
   size_t len;
-  err = js_get_arraybuffer_info(env, arraybuffer.value, (void **) &data, &len);
+  err = js_get_arraybuffer_info(env, arraybuffer.value, reinterpret_cast<void **>(&data), &len);
   if (err < 0) return err;
 
   assert(len == sizeof(T));
@@ -2921,7 +2921,7 @@ js_get_arraybuffer_info(js_env_t *env, const js_arraybuffer_t &arraybuffer, std:
 template <js_typedarray_element_t T>
 static inline auto
 js_get_typedarray_info(js_env_t *env, const js_typedarray_t<T> &typedarray, T *&data, size_t &len) {
-  return js_get_typedarray_info(env, typedarray.value, nullptr, (void **) &data, &len, nullptr, nullptr);
+  return js_get_typedarray_info(env, typedarray.value, nullptr, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
 }
 
 template <typename T>
@@ -2930,7 +2930,7 @@ js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, T *&d
   int err;
 
   js_typedarray_type_t type;
-  err = js_get_typedarray_info(env, typedarray.value, &type, (void **) &data, &len, nullptr, nullptr);
+  err = js_get_typedarray_info(env, typedarray.value, &type, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
   if (err < 0) return err;
 
   len = len * js_typedarray_element_size(type) / sizeof(T);
@@ -2944,7 +2944,7 @@ js_get_typedarray_info(js_env_t *env, const js_typedarray_t<uint8_t> &typedarray
   int err;
 
   size_t len;
-  err = js_get_typedarray_info(env, typedarray.value, nullptr, (void **) &data, &len, nullptr, nullptr);
+  err = js_get_typedarray_info(env, typedarray.value, nullptr, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
   if (err < 0) return err;
 
   assert(len == sizeof(T));
@@ -3012,7 +3012,7 @@ js_get_value_string(js_env_t *env, const js_string_t &string, std::string &resul
 
   result.resize(len);
 
-  return js_get_value_string_utf8(env, string.value, (utf8_t *) result.data(), result.length(), nullptr);
+  return js_get_value_string_utf8(env, string.value, reinterpret_cast<utf8_t *>(result.data()), result.length(), nullptr);
 }
 
 static inline auto
@@ -3262,7 +3262,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const T values[N],
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, array.value, (const js_value_t **) marshalled, N, offset);
+  return js_set_array_elements(env, array.value, const_cast<const js_value_t **>(marshalled), N, offset);
 }
 
 template <bool checked = js_is_debug, typename T, size_t N>
@@ -3277,7 +3277,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::array<T
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, array.value, (const js_value_t **) marshalled, N, offset);
+  return js_set_array_elements(env, array.value, const_cast<const js_value_t **>(marshalled), N, offset);
 }
 
 template <bool checked = js_is_debug, typename T>
@@ -3294,7 +3294,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, array.value, (const js_value_t **) marshalled.data(), len, offset);
+  return js_set_array_elements(env, array.value, const_cast<const js_value_t **>(marshalled.data()), len, offset);
 }
 
 template <bool checked = js_is_debug, typename... T, size_t... I>
@@ -3305,7 +3305,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T
       js_marshall_untyped_value<checked, T>(env, std::get<I>(values))...
     };
 
-    return js_set_array_elements(env, array.value, (const js_value_t **) values, sizeof...(T), offset);
+    return js_set_array_elements(env, array.value, const_cast<const js_value_t **>(values), sizeof...(T), offset);
   } catch (int err) {
     return err;
   }
@@ -3333,7 +3333,7 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, j
 
   const auto &name = property.name;
 
-  err = js_create_string_utf8(env, (const utf8_t *) name.data(), name.length(), &descriptor.name);
+  err = js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(name.data()), name.length(), &descriptor.name);
   if (err < 0) return err;
 
   err = js_type_info_t<T>::template marshall<checked>(env, property.value, descriptor.value);
