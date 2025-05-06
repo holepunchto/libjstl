@@ -26,17 +26,16 @@ main() {
   e = js_create_object(env, object);
   assert(e == 0);
 
-  js_persistent_t<js_object_t> a;
-  e = js_create_reference(env, object, a);
-  assert(e == 0);
+  {
+    js_persistent_t<js_object_t> a;
+    e = js_create_reference(env, object, a);
+    assert(e == 0);
 
-  js_persistent_t<js_object_t> b = std::move(a);
+    js_persistent_t<js_object_t> b = std::move(a);
 
-  assert(a.ref == NULL);
-  assert(b.ref != NULL);
-
-  e = js_reset_reference(env, b);
-  assert(e == 0);
+    assert(a.empty());
+    assert(b.empty() == false);
+  }
 
   e = js_close_handle_scope(env, scope);
   assert(e == 0);

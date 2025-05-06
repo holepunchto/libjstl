@@ -26,16 +26,15 @@ main() {
   e = js_create_object(env, object);
   assert(e == 0);
 
-  js_persistent_t<js_object_t> reference;
-  e = js_create_reference(env, object, reference);
-  assert(e == 0);
+  {
+    js_persistent_t<js_object_t> reference;
+    e = js_create_reference(env, object, reference);
+    assert(e == 0);
 
-  js_object_t value;
-  e = js_get_reference_value(env, reference, value);
-  assert(e == 0);
-
-  e = js_reset_reference(env, reference);
-  assert(e == 0);
+    js_object_t value;
+    e = js_get_reference_value(env, reference, value);
+    assert(e == 0);
+  }
 
   e = js_close_handle_scope(env, scope);
   assert(e == 0);

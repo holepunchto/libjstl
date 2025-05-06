@@ -157,25 +157,50 @@ struct js_external_t : js_handle_t {
 
 template <typename T>
 struct js_persistent_t {
-  js_env_t *env;
-  js_ref_t *ref;
+  js_persistent_t() : env_(nullptr), ref_(nullptr) {}
 
-  js_persistent_t() : env(nullptr), ref(nullptr) {}
+  js_persistent_t(js_env_t *env, js_ref_t *ref) : env_(env), ref_(ref) {};
 
-  js_persistent_t(js_persistent_t &&that) : env(that.env), ref(std::exchange(that.ref, nullptr)) {}
+  js_persistent_t(js_persistent_t &&that) : env_(that.env_), ref_(std::exchange(that.ref_, nullptr)) {}
 
   js_persistent_t(const js_persistent_t &) = delete;
 
   ~js_persistent_t() {
-    if (ref == nullptr) return;
+    reset();
+  }
 
-    int err;
-    err = js_delete_reference(env, ref);
-    assert(err == 0);
+  void
+  operator=(js_persistent_t &&that) {
+    this->env_ = that.env_;
+    this->ref_ = std::exchange(that.ref_, nullptr);
   }
 
   void
   operator=(const js_persistent_t &) = delete;
+
+  operator js_ref_t *() const {
+    return ref_;
+  }
+
+  bool
+  empty() {
+    return ref_ == nullptr;
+  }
+
+  void
+  reset() {
+    if (ref_ == nullptr) return;
+
+    int err;
+    err = js_delete_reference(env_, ref_);
+    assert(err == 0);
+
+    ref_ = nullptr;
+  }
+
+private:
+  js_env_t *env_;
+  js_ref_t *ref_;
 };
 
 template <int check(js_env_t *, js_value_t *, bool *result)>
@@ -3581,17 +3606,29 @@ js_run_script(js_env_t *env, const js_string_t &source, js_handle_t &result) {
 template <typename T>
 static inline auto
 js_create_reference(js_env_t *env, const T &value, js_persistent_t<T> &result) {
-  result.env = env;
+  int err;
 
-  return js_create_reference(env, value, 1, &result.ref);
+  js_ref_t *ref;
+  err = js_create_reference(env, value, 1, &ref);
+  if (err < 0) return err;
+
+  result = js_persistent_t<T>(env, ref);
+
+  return 0;
 }
 
 template <typename T>
 static inline auto
 js_create_weak_reference(js_env_t *env, const T &value, js_persistent_t<T> &result) {
-  result.env = env;
+  int err;
 
-  return js_create_reference(env, value, 0, &result.ref);
+  js_ref_t *ref;
+  err = js_create_reference(env, value, 0, &ref);
+  if (err < 0) return err;
+
+  result = js_persistent_t<T>(env, ref);
+
+  return 0;
 }
 
 template <typename T>
@@ -3600,7 +3637,7 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, T &re
   int err;
 
   js_value_t *value;
-  err = js_get_reference_value(env, reference.ref, &value);
+  err = js_get_reference_value(env, reference, &value);
   if (err < 0) return err;
 
   assert(value != nullptr);
@@ -3616,25 +3653,10 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, std::
   int err;
 
   js_value_t *value;
-  err = js_get_reference_value(env, reference.ref, &value);
+  err = js_get_reference_value(env, reference, &value);
   if (err < 0) return err;
 
   result = value == nullptr ? std::nullopt : std::optional(T(value));
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_reset_reference(js_env_t *env, js_persistent_t<T> &reference) {
-  int err;
-
-  if (reference.ref == nullptr) return 0;
-
-  err = js_delete_reference(env, reference.ref);
-  if (err < 0) return err;
-
-  reference.ref = nullptr;
 
   return 0;
 }
