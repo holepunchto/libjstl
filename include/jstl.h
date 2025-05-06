@@ -676,6 +676,148 @@ struct js_type_info_t<js_bigint_t> {
   }
 };
 
+struct js_bigint64_t {
+  js_bigint64_t() : value_(0) {}
+
+  js_bigint64_t(int64_t value) : value_(value) {}
+
+  operator int64_t() const {
+    return value_;
+  }
+
+private:
+  int64_t value_;
+};
+
+template <>
+struct js_type_info_t<js_bigint64_t> {
+  using type = int64_t;
+
+  static constexpr auto signature = js_bigint64;
+
+  static auto
+  marshall(js_bigint64_t value, int64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *, js_bigint64_t value, int64_t &result) {
+    return marshall(value, result);
+  }
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, js_bigint64_t value, js_value_t *&result) {
+    return js_create_bigint_int64(env, value, &result);
+  }
+
+  static auto
+  unmarshall(int64_t value, js_bigint64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *, int64_t value, js_bigint64_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_bigint64_t &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_bigint>(env, value, "bigint");
+      if (err < 0) return err;
+    }
+
+    int64_t bigint;
+    err = js_get_value_bigint_int64(env, value, &bigint, nullptr);
+    if (err < 0) return err;
+
+    result = bigint;
+
+    return 0;
+  }
+};
+
+struct js_biguint64_t {
+  js_biguint64_t() : value_(0) {}
+
+  js_biguint64_t(uint64_t value) : value_(value) {}
+
+  operator uint64_t() const {
+    return value_;
+  }
+
+private:
+  uint64_t value_;
+};
+
+template <>
+struct js_type_info_t<js_biguint64_t> {
+  using type = uint64_t;
+
+  static constexpr auto signature = js_biguint64;
+
+  static auto
+  marshall(uint64_t value, uint64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *, js_biguint64_t value, uint64_t &result) {
+    return marshall(value, result);
+  }
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, js_biguint64_t value, js_value_t *&result) {
+    return js_create_bigint_uint64(env, value, &result);
+  }
+
+  static auto
+  unmarshall(uint64_t value, js_biguint64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *, uint64_t value, js_biguint64_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_biguint64_t &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_bigint>(env, value, "bigint");
+      if (err < 0) return err;
+    }
+
+    uint64_t bigint;
+    err = js_get_value_bigint_uint64(env, value, &bigint, nullptr);
+    if (err < 0) return err;
+
+    result = bigint;
+
+    return 0;
+  }
+};
+
 template <>
 struct js_type_info_t<js_string_t> {
   using type = js_value_t *;

@@ -7,6 +7,8 @@ list(APPEND tests
   create-function-return-array-int32
   create-function-return-arraybuffer
   create-function-return-arraybuffer-span
+  create-function-return-bigint64
+  create-function-return-biguint64
   create-function-return-bool
   create-function-return-double
   create-function-return-int32
@@ -30,6 +32,8 @@ list(APPEND tests
   create-function-return-void-arg-array-int32
   create-function-return-void-arg-arraybuffer
   create-function-return-void-arg-arraybuffer-span
+  create-function-return-void-arg-bigint64
+  create-function-return-void-arg-biguint64
   create-function-return-void-arg-bool
   create-function-return-void-arg-double
   create-function-return-void-arg-int32
