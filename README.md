@@ -6,6 +6,22 @@ C++ template library for <https://github.com/holepunchto/libjs>. It aims to make
 
 ### Handle types
 
+To improve type safety and ergonomics `libjstl` wraps the `js_value_t *` ABI handle type in a type hierarchy that mirrors the JavaScript type hierarchy. All handle types support conversion to plain `js_value_t *` ABI handles by means of explicit casts:
+
+```cpp
+js_boolean_t boolean;
+
+js_value_t *handle = static_cast<js_value_t *>(boolean);
+```
+
+For cases where an ABI handle output variable is expected, cast to `js_value_t **` instead:
+
+```cpp
+js_boolean_t boolean;
+
+js_value_t **handle = static_cast<js_value_t **>(boolean);
+```
+
 #### `js_handle_t`
 
 #### `js_primitive_t`
