@@ -32,6 +32,8 @@ list(APPEND tests
   create-function-return-void-arg-array-int32
   create-function-return-void-arg-arraybuffer
   create-function-return-void-arg-arraybuffer-span
+  create-function-return-void-arg-arraybuffer-span-of-struct
+  create-function-return-void-arg-arraybuffer-span-of-struct-dynamic
   create-function-return-void-arg-bigint64
   create-function-return-void-arg-biguint64
   create-function-return-void-arg-bool

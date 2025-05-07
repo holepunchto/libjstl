@@ -969,14 +969,15 @@ struct js_type_info_t<js_arraybuffer_t> {
 
 namespace {
 
-static uint8_t js_arraybuffer_span_nil[1] = {0};
+template <typename T>
+static T js_arraybuffer_span_nil[1] = {T()};
 
-}
+} // namespace
 
 struct js_arraybuffer_span_t {
-  js_arraybuffer_span_t() : data_(js_arraybuffer_span_nil), size_(0) {}
+  js_arraybuffer_span_t() : data_(js_arraybuffer_span_nil<uint8_t>), size_(0) {}
 
-  js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil : data), size_(len) {}
+  js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil<uint8_t> : data), size_(len) {}
 
   uint8_t &
   operator[](size_t i) {
@@ -1070,6 +1071,179 @@ struct js_type_info_t<js_arraybuffer_span_t> {
   }
 };
 
+constexpr size_t js_arraybuffer_span_dynamic = -1;
+
+template <typename T, size_t N = js_arraybuffer_span_dynamic>
+struct js_arraybuffer_span_of_t;
+
+template <typename T>
+struct js_arraybuffer_span_of_t<T, 1> {
+  js_arraybuffer_span_of_t() : data_(nullptr) {}
+
+  js_arraybuffer_span_of_t(T *data) : data_(data) {}
+
+  T *
+  operator->() const {
+    return data_;
+  }
+
+  T &
+  operator*() {
+    return *data_;
+  }
+
+  const T &
+  operator*() const {
+    return *data_;
+  }
+
+private:
+  T *data_;
+};
+
+template <typename T>
+js_arraybuffer_span_of_t(T *data) -> js_arraybuffer_span_of_t<T, 1>;
+
+template <typename T>
+struct js_arraybuffer_span_of_t<T, js_arraybuffer_span_dynamic> {
+  js_arraybuffer_span_of_t() : data_(js_arraybuffer_span_nil<T>), size_(0) {}
+
+  js_arraybuffer_span_of_t(T *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil<T> : data), size_(len) {}
+
+  T &
+  operator[](size_t i) {
+    return data_[i];
+  }
+
+  const T
+  operator[](size_t i) const {
+    return data_[i];
+  }
+
+  T *
+  data() const {
+    return data_;
+  }
+
+  size_t
+  size() const {
+    return size_;
+  }
+
+  size_t
+  size_bytes() const {
+    return size_ * sizeof(T);
+  }
+
+  bool
+  empty() const {
+    return size_ == 0;
+  }
+
+  T *
+  begin() const {
+    return data_;
+  }
+
+  T *
+  end() const {
+    return data_ + size_;
+  }
+
+private:
+  T *data_;
+  size_t size_;
+};
+
+template <typename T>
+js_arraybuffer_span_of_t(T *data, size_t len) -> js_arraybuffer_span_of_t<T>;
+
+template <typename T>
+struct js_type_info_t<js_arraybuffer_span_of_t<T, 1>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const js_arraybuffer_span_of_t<T, 1> &view, js_value_t *&result) {
+    int err;
+
+    T *data;
+    err = js_create_arraybuffer(env, sizeof(T), reinterpret_cast<void **>(&data), &result);
+    if (err < 0) return err;
+
+    *data = *view;
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_arraybuffer_span_of_t<T, 1> &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_arraybuffer>(env, value, "arraybuffer");
+      if (err < 0) return err;
+    }
+
+    T *data;
+    size_t len;
+    err = js_get_arraybuffer_info(env, value, reinterpret_cast<void **>(&data), &len);
+    if (err < 0) return err;
+
+    assert(len == sizeof(T));
+
+    result = js_arraybuffer_span_of_t<T, 1>(data);
+
+    return 0;
+  }
+};
+
+template <typename T>
+struct js_type_info_t<js_arraybuffer_span_of_t<T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const js_arraybuffer_span_of_t<T> &view, js_value_t *&result) {
+    int err;
+
+    T *data;
+    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &result);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), data);
+
+    return 0;
+  }
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_arraybuffer_span_of_t<T> &result) {
+    int err;
+
+    if constexpr (checked) {
+      err = js_check_value<js_is_arraybuffer>(env, value, "arraybuffer");
+      if (err < 0) return err;
+    }
+
+    T *data;
+    size_t len;
+    err = js_get_arraybuffer_info(env, value, reinterpret_cast<void **>(&data), &len);
+    if (err < 0) return err;
+
+    assert(len % sizeof(T) == 0);
+
+    result = js_arraybuffer_span_of_t<T>(data, len / sizeof(T));
+
+    return 0;
+  }
+};
+
 template <js_typedarray_element_t T>
 struct js_type_info_t<js_typedarray_t<T>> {
   using type = js_value_t *;
@@ -1154,7 +1328,7 @@ js_typedarray_element_size(js_typedarray_type_t type) {
 namespace {
 
 template <typename T>
-static T js_typedarray_span_nil[1] = {T(0)};
+static T js_typedarray_span_nil[1] = {T()};
 
 }
 
