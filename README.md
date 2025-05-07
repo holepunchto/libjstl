@@ -62,21 +62,116 @@ At the core of `libjstl` is a type marshalling system responsible for converting
 
 #### `js_type_info_t<T>`
 
+```cpp
+struct data {
+  int32_t foo;
+  bool bar;
+};
+
+template <>
+struct js_type_info_t<struct data> {
+  // ...
+};
+```
+
 ##### `js_type_info_t<T>::type`
+
+The ABI type used to represent `T`. Must be `js_value_t *` unless otherwise stated.
+
+```cpp
+template <>
+struct js_type_info_t<struct data> {
+  using type = js_value_t *;
+
+  // ...
+};
+```
 
 ##### `js_type_info_t<T>::signature`
 
-##### `int js_type_info_t<T>::marshall(const T &, type &)`
+The typed function signature used to represent `T` as a `constexpr` value. Must be a member of `js_value_type_t` unless otherwise stated.
 
-##### `int js_type_info_t<T>::marshall(js_env_t *, const T &, type &)`
+```cpp
+template <>
+struct js_type_info_t<struct data> {
+  // ...
 
-##### `int js_type_info_t<T>::marshall(js_env_t *, const T &, js_value_t *&)`
+  static constexpr auto signature = js_object;
 
-##### `int js_type_info_t<T>::unmarshall(const type &, T &)`
+  // ...
+};
+```
 
-##### `int js_type_info_t<T>::unmarshall(js_env_t *, const type &, T &)`
+##### `template <bool checked> int js_type_info_t<T>::marshall(const T &, type &)`
 
-##### `int js_type_info_t<T>::unmarshall(js_env_t *, const type &, js_value_t *&)`
+Convert a value of type `T` to the ABI type indiciated by `js_type_info_t<t>::type`. The method is not allowed to call into the JavaScript engine and must be omitted if the value cannot be converted without calling into the JavaScript engine.
+
+##### `template <bool checked> int js_type_info_t<T>::marshall(js_env_t *, const T &, type &)`
+
+Convert a value of type `T` to the ABI type indiciated by `js_type_info_t<t>::type`. The method is allowed to call into the JavaScript engine. For cases where `js_type_info_t<t>::type` is `js_value_t *` the method will be the same as the method below.
+
+##### `template <bool checked> int js_type_info_t<T>::marshall(js_env_t *, const T &, js_value_t *&)`
+
+Convert a value of type `T` to the ABI type indiciated by `js_type_info_t<t>::type`. The method is allowed to call into the JavaScript engine.
+
+```cpp
+template <>
+struct js_type_info_t<struct data> {
+  // ...
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, struct data value, js_value_t *&result) {
+    int err;
+
+    err = js_create_object(env, &result);
+    if (err < 0) return err;
+
+    err = js_set_property(env, js_object_t(result), "foo", value.foo);
+    if (err < 0) return err;
+
+    err = js_set_property(env, js_object_t(result), "bar", value.bar);
+    if (err < 0) return err;
+
+    return 0;
+  }
+
+  // ...
+};
+```
+
+##### `template <bool checked> int js_type_info_t<T>::unmarshall(const type &, T &)`
+
+Convert a value of the ABI type indiciated by `js_type_info_t<t>::type` to the type `T`. The method is not allowed to call into the JavaScript engine and must be omitted if the value cannot be converted without calling into the JavaScript engine.
+
+##### `template <bool checked> int js_type_info_t<T>::unmarshall(js_env_t *, const type &, T &)`
+
+Convert a value of the ABI type indiciated by `js_type_info_t<t>::type` to the type `T`. The method is allowed to call into the JavaScript engine. For cases where `js_type_info_t<t>::type` is `js_value_t *` the method will be the same as the method below.
+
+##### `template <bool checked> int js_type_info_t<T>::unmarshall(js_env_t *, const type &, js_value_t *&)`
+
+Convert a value of the ABI type indiciated by `js_type_info_t<t>::type` to the type `T`. The method is allowed to call into the JavaScript engine.
+
+```cpp
+template <>
+struct js_type_info_t<struct data> {
+  // ...
+
+  template <bool checked>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, struct data &result) {
+    int err;
+
+    err = js_get_property(env, js_object_t(value), "foo", result.foo);
+    if (err < 0) return err;
+
+    err = js_get_property(env, js_object_t(value), "bar", result.bar);
+    if (err < 0) return err;
+
+    return 0;
+  }
+};
+```
 
 ### Native functions
 

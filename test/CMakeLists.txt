@@ -70,6 +70,7 @@ list(APPEND tests
   create-typedarray-get-info-move-assign
   set-get-property-literal-function-pointer
   set-get-property-literal-int32
+  set-get-property-literal-struct
   set-get-property-literal-uint32
 )
 
