@@ -178,7 +178,7 @@ struct js_persistent_t {
   void
   operator=(const js_persistent_t &) = delete;
 
-  operator js_ref_t *() const {
+  explicit operator js_ref_t *() const {
     return ref_;
   }
 
@@ -3609,7 +3609,7 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, T &re
   int err;
 
   js_value_t *value;
-  err = js_get_reference_value(env, reference, &value);
+  err = js_get_reference_value(env, static_cast<js_ref_t *>(reference), &value);
   if (err < 0) return err;
 
   assert(value != nullptr);
@@ -3625,7 +3625,7 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, std::
   int err;
 
   js_value_t *value;
-  err = js_get_reference_value(env, reference, &value);
+  err = js_get_reference_value(env, static_cast<js_ref_t *>(reference), &value);
   if (err < 0) return err;
 
   result = value == nullptr ? std::nullopt : std::optional(T(value));
