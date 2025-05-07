@@ -3465,7 +3465,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
   err = js_type_info_t<T>::template marshall<checked>(env, value, marshalled);
   if (err < 0) return err;
 
-  return js_set_property(env, object, name, marshalled);
+  return js_set_property(env, static_cast<js_value_t *>(object), static_cast<js_value_t *>(name), marshalled);
 }
 
 template <bool checked = js_is_debug, typename T>
