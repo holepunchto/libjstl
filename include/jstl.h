@@ -186,11 +186,6 @@ struct js_persistent_t {
     return &ref_;
   }
 
-  bool
-  empty() {
-    return ref_ == nullptr;
-  }
-
   void
   reset() {
     if (ref_ == nullptr) return;
@@ -200,6 +195,11 @@ struct js_persistent_t {
     assert(err == 0);
 
     ref_ = nullptr;
+  }
+
+  bool
+  empty() {
+    return ref_ == nullptr;
   }
 
 private:
