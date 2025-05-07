@@ -127,10 +127,10 @@ struct js_type_info_t<struct data> {
     err = js_create_object(env, &result);
     if (err < 0) return err;
 
-    err = js_set_property(env, js_object_t(result), "foo", value.foo);
+    err = js_set_property(env, result, "foo", value.foo);
     if (err < 0) return err;
 
-    err = js_set_property(env, js_object_t(result), "bar", value.bar);
+    err = js_set_property(env, result, "bar", value.bar);
     if (err < 0) return err;
 
     return 0;
@@ -162,10 +162,10 @@ struct js_type_info_t<struct data> {
   unmarshall(js_env_t *env, js_value_t *value, struct data &result) {
     int err;
 
-    err = js_get_property(env, js_object_t(value), "foo", result.foo);
+    err = js_get_property(env, value, "foo", result.foo);
     if (err < 0) return err;
 
-    err = js_get_property(env, js_object_t(value), "bar", result.bar);
+    err = js_get_property(env, value, "bar", result.bar);
     if (err < 0) return err;
 
     return 0;

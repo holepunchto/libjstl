@@ -3412,6 +3412,18 @@ js_get_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
 
 template <bool checked = js_is_debug, typename T>
 static inline auto
+js_get_property(js_env_t *env, js_value_t *object, const js_name_t &name, T &result) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_get_property<checked>(env, unmarshalled, name, result);
+}
+
+template <bool checked = js_is_debug, typename T>
+static inline auto
 js_get_property(js_env_t *env, const js_object_t &object, const char *name, T &result) {
   int err;
 
@@ -3420,6 +3432,18 @@ js_get_property(js_env_t *env, const js_object_t &object, const char *name, T &r
   if (err < 0) return err;
 
   return js_type_info_t<T>::template unmarshall<checked>(env, value, result);
+}
+
+template <bool checked = js_is_debug, typename T>
+static inline auto
+js_get_property(js_env_t *env, js_value_t *object, const char *name, T &result) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_get_property<checked>(env, unmarshalled, name, result);
 }
 
 static inline auto
@@ -3446,6 +3470,18 @@ js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
 
 template <bool checked = js_is_debug, typename T>
 static inline auto
+js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name, const T &value) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_set_property<checked>(env, unmarshalled, name, value);
+}
+
+template <bool checked = js_is_debug, typename T>
+static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const char *name, const T &value) {
   int err;
 
@@ -3454,6 +3490,18 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, cons
   if (err < 0) return err;
 
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, marshalled);
+}
+
+template <bool checked = js_is_debug, typename T>
+static inline auto
+js_set_property(js_env_t *env, js_value_t *object, const char *name, const T &value) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_set_property<checked>(env, unmarshalled, name, value);
 }
 
 template <auto fn, bool scoped = true, bool checked = js_is_debug>
@@ -3470,6 +3518,18 @@ js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name)
 
 template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
+js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_set_property<fn, scoped, checked>(env, unmarshalled, name);
+}
+
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
+static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
   int err;
 
@@ -3478,6 +3538,18 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
   if (err < 0) return err;
 
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t *>(value));
+}
+
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
+static inline auto
+js_set_property(js_env_t *env, js_value_t *object, const char *name) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_set_property<fn, scoped, checked>(env, unmarshalled, name);
 }
 
 static inline auto
@@ -3514,6 +3586,18 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index, const T
   return js_set_element(env, object, index, marshalled);
 }
 
+template <bool checked = js_is_debug, typename T>
+static inline auto
+js_set_element(js_env_t *env, js_value_t *object, uint32_t index, const T &value) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_set_element<checked>(env, unmarshalled, index, value);
+}
+
 template <auto fn, bool scoped = true, bool checked = js_is_debug>
 static inline auto
 js_set_element(js_env_t *env, const js_object_t &object, uint32_t index) {
@@ -3524,6 +3608,18 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index) {
   if (err < 0) return err;
 
   return js_set_element(env, object, index, value);
+}
+
+template <auto fn, bool scoped = true, bool checked = js_is_debug>
+static inline auto
+js_set_element(js_env_t *env, js_value_t *object, uint32_t index) {
+  int err;
+
+  js_object_t unmarshalled;
+  err = js_type_info_t<js_object_t>::template unmarshall<checked>(env, object, unmarshalled);
+  if (err < 0) return err;
+
+  return js_set_element<fn, scoped, checked>(env, unmarshalled, index);
 }
 
 template <bool checked = js_is_debug, typename T, size_t N>
