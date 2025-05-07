@@ -1827,6 +1827,31 @@ struct js_type_info_t<T[N]> {
 };
 
 template <typename T, size_t N>
+struct js_type_info_t<const T[N]> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <bool checked>
+  static auto
+  marshall(js_env_t *env, const T array[N], js_value_t *&result) {
+    int err;
+
+    err = js_create_array_with_length(env, N, &result);
+    assert(err == 0);
+
+    js_value_t *values[N];
+
+    for (uint32_t i = 0; i < N; i++) {
+      err = js_type_info_t<T>::template marshall<checked>(env, array[i], values[i]);
+      if (err < 0) return err;
+    }
+
+    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), N, 0);
+  }
+};
+
+template <typename T, size_t N>
 struct js_type_info_t<std::array<T, N>> {
   using type = js_value_t *;
 

@@ -227,6 +227,8 @@ struct js_type_info_t<struct data> {
 
 #### `T[N]`
 
+#### `const T[N]`
+
 #### `std::array<T, N>`
 
 #### `std::vector<T>`
