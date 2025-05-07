@@ -3583,7 +3583,7 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index, const T
   err = js_type_info_t<T>::template marshall<checked>(env, value, marshalled);
   if (err < 0) return err;
 
-  return js_set_element(env, object, index, marshalled);
+  return js_set_element(env, static_cast<js_value_t *>(object), index, marshalled);
 }
 
 template <bool checked = js_is_debug, typename T>
