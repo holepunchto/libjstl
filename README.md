@@ -187,57 +187,111 @@ struct js_type_info_t<struct data> {
 
 ### Builtin types
 
+`libjstl` comes with a number of builtin `js_type_info_t<T>` implementations to cover the most common JavaScript, C, and C++ types. To add support for your own types, see the [Type marshalling](#type-marshalling) section above.
+
 #### `void`
+
+The `undefined` value in JavaScript. It is only valid as the return type of native functions and any other use of this type is undefined.
 
 #### `bool`
 
+Either `true` or `false` in JavaScript.
+
 #### `int32_t`
+
+A `number` in JavaScript with a valid range of -2,147,483,648 to 2,147,483,647.
 
 #### `uint32_t`
 
+A `number` in JavaScript with a valid range of 0 to 4,294,967,295.
+
 #### `int64_t`
+
+A `number` in JavaScript with a valid range of `Number.MIN_SAFE_INTEGER` (-9,007,199,254,740,991) to `Number.MAX_SAFE_INTEGER` (9,007,199,254,740,991).
 
 #### `double`
 
+A `number` in JavaScript with a valid range of `Number.MIN_VALUE` (5e-324) to `Number.MAX_VALUE` (1.7976931348623157e+308) and a precision of `Number.EPSILON`.
+
 #### `js_bigin64_t`
+
+A `bigint` in JavaScript with a valid range of -9,223,372,036,854,775,808 to 9,223,372,036,854,775,807.
 
 #### `js_biguin64_t`
 
+A `bigint` in JavaScript with a valid range of 0 to 18,446,744,073,709,551,615.
+
 #### `js_arraybuffer_span_t`
+
+The elements of an `ArrayBuffer` in JavaScript. Supports indexing operations such as `y = arrabuffer[x]`, `arraybuffer[x] = y`, and `p = &arraybuffer[x]`.
 
 #### `js_arraybuffer_span_of_t<T>`
 
+The elements of an `ArrayBuffer` in JavaScript interpreted as an array of elements of type `T`. Supports indexing operations such as `y = arrabuffer[x]`, `arraybuffer[x] = y`, and `p = &arraybuffer[x]`.
+
 #### `js_arraybuffer_span_of_t<T, 1>`
+
+The elements of an `ArrayBuffer` in JavaScript interpreted as a single element of type `T`. Supports dereferencing operations such as `value->field` and `*value`.
 
 #### `js_typedarraybuffer_span_t<T>`
 
+The elements of a `TypedArray` in JavaScript that is a view of elements of type `T`. Supports indexing operations such as `y = arrabuffer[x]`, `arraybuffer[x] = y`, and `p = &arraybuffer[x]`.
+
 #### `js_typedarraybuffer_span_t<>`
+
+The elements of a `TypedArray` in JavaScript that is a view of elements of any type.
 
 #### `T *`
 
+An `external` value in JavaScript that is a pointer to an element of type `T`.
+
 #### `char[N]`
+
+A `string` in JavaScript represented as a `NULL`-terminated C string of `N` characters.
 
 #### `const char[N]`
 
+A `string` in JavaScript represented as an immutable `NULL`-terminated C string of `N` characters.
+
 #### `char *`
+
+A `string` in JavaScript represented as a `NULL`-terminated C string.
 
 #### `const char *`
 
+A `string` in JavaScript represented as an immutable `NULL`-terminated C string.
+
 #### `std::string`
+
+A `string` in JavaScript represented as a C++ string.
 
 #### `T[N]`
 
+An `Array` in JavaScript represented as a C array with `N` elements of type `T`.
+
 #### `const T[N]`
+
+An `Array` in JavaScript represented as a C array with `N` immutable elements of type `T`.
 
 #### `std::array<T, N>`
 
+An `Array` in JavaScript represented as a C++ array with `N` elements.
+
 #### `std::vector<T>`
+
+An `Array` in JavaScript represented as a C++ vector.
 
 #### `std::tuple<T...>`
 
+An `Array` in JavaScript represented as a C++ tuple.
+
 #### `std::span<T>`
 
+The elements of a `TypedArray` in JavaScript that is a view of elements of type `T`, represented as a C++ span.
+
 #### `std::optional<T>`
+
+Either `undefined` or a value of type `T`.
 
 ## License
 
