@@ -11,7 +11,7 @@ struct data {
 
 template <>
 struct js_type_info_t<struct data> {
-  template <bool checked>
+  template <js_type_info_options_t options>
   static auto
   marshall(js_env_t *env, struct data value, js_value_t *&result) {
     int err;
@@ -28,7 +28,7 @@ struct js_type_info_t<struct data> {
     return 0;
   }
 
-  template <bool checked>
+  template <js_type_info_options_t options>
   static auto
   unmarshall(js_env_t *env, js_value_t *value, struct data &result) {
     int err;

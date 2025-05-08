@@ -102,15 +102,15 @@ struct js_type_info_t<struct data> {
 };
 ```
 
-##### `template <bool checked> int js_type_info_t<T>::marshall(const T &, type &)`
+##### `template <js_type_info_options_t options> int js_type_info_t<T>::marshall(const T &, type &)`
 
 Convert a value of type `T` to the ABI type indiciated by `js_type_info_t<t>::type`. The method is not allowed to call into the JavaScript engine and must be omitted if the value cannot be converted without calling into the JavaScript engine.
 
-##### `template <bool checked> int js_type_info_t<T>::marshall(js_env_t *, const T &, type &)`
+##### `template <js_type_info_options_t options> int js_type_info_t<T>::marshall(js_env_t *, const T &, type &)`
 
 Convert a value of type `T` to the ABI type indiciated by `js_type_info_t<t>::type`. The method is allowed to call into the JavaScript engine. For cases where `js_type_info_t<t>::type` is `js_value_t *` the method will be the same as the method below.
 
-##### `template <bool checked> int js_type_info_t<T>::marshall(js_env_t *, const T &, js_value_t *&)`
+##### `template <js_type_info_options_t options> int js_type_info_t<T>::marshall(js_env_t *, const T &, js_value_t *&)`
 
 Convert a value of type `T` to the ABI type indiciated by `js_type_info_t<t>::type`. The method is allowed to call into the JavaScript engine.
 
@@ -119,7 +119,7 @@ template <>
 struct js_type_info_t<struct data> {
   // ...
 
-  template <bool checked>
+  template <js_type_info_options_t options>
   static auto
   marshall(js_env_t *env, struct data value, js_value_t *&result) {
     int err;
@@ -140,15 +140,15 @@ struct js_type_info_t<struct data> {
 };
 ```
 
-##### `template <bool checked> int js_type_info_t<T>::unmarshall(const type &, T &)`
+##### `template <js_type_info_options_t options> int js_type_info_t<T>::unmarshall(const type &, T &)`
 
 Convert a value of the ABI type indiciated by `js_type_info_t<t>::type` to the type `T`. The method is not allowed to call into the JavaScript engine and must be omitted if the value cannot be converted without calling into the JavaScript engine.
 
-##### `template <bool checked> int js_type_info_t<T>::unmarshall(js_env_t *, const type &, T &)`
+##### `template <js_type_info_options_t options> int js_type_info_t<T>::unmarshall(js_env_t *, const type &, T &)`
 
 Convert a value of the ABI type indiciated by `js_type_info_t<t>::type` to the type `T`. The method is allowed to call into the JavaScript engine. For cases where `js_type_info_t<t>::type` is `js_value_t *` the method will be the same as the method below.
 
-##### `template <bool checked> int js_type_info_t<T>::unmarshall(js_env_t *, const type &, js_value_t *&)`
+##### `template <js_type_info_options_t options> int js_type_info_t<T>::unmarshall(js_env_t *, const type &, js_value_t *&)`
 
 Convert a value of the ABI type indiciated by `js_type_info_t<t>::type` to the type `T`. The method is allowed to call into the JavaScript engine.
 
@@ -157,7 +157,7 @@ template <>
 struct js_type_info_t<struct data> {
   // ...
 
-  template <bool checked>
+  template <js_type_info_options_t options>
   static auto
   unmarshall(js_env_t *env, js_value_t *value, struct data &result) {
     int err;
