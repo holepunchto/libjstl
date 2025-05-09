@@ -1678,6 +1678,188 @@ struct js_type_info_t<T *> {
 };
 
 template <size_t N>
+struct js_type_info_t<utf8_t[N]> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf8_t value[N], js_value_t *&result) {
+    return js_create_string_utf8(env, value, N, &result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, utf8_t result[N]) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_string>(env, value, "string");
+      if (err < 0) return err;
+    }
+
+    size_t len;
+    err = js_get_value_string_utf8(env, value, result, N, &len);
+    if (err < 0) return err;
+
+    assert(len == N);
+
+    return 0;
+  }
+};
+
+template <size_t N>
+struct js_type_info_t<const utf8_t[N]> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf8_t value[N], js_value_t *&result) {
+    return js_create_string_utf8(env, value, N, &result);
+  }
+};
+
+template <>
+struct js_type_info_t<utf8_t *> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf8_t *value, js_value_t *&result) {
+    return js_create_string_utf8(env, value, -1, &result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, utf8_t *&result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_string>(env, value, "string");
+      if (err < 0) return err;
+    }
+
+    size_t len;
+    err = js_get_value_string_utf8(env, value, nullptr, 0, &len);
+    if (err < 0) return err;
+
+    len += 1 /* NULL */;
+    result = new utf8_t[len];
+
+    return js_get_value_string_utf8(env, value, result, len, nullptr);
+  }
+};
+
+template <>
+struct js_type_info_t<const utf8_t *> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf8_t *value, js_value_t *&result) {
+    return js_create_string_utf8(env, value, -1, &result);
+  }
+};
+
+template <size_t N>
+struct js_type_info_t<utf16_t[N]> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf16_t value[N], js_value_t *&result) {
+    return js_create_string_utf16le(env, value, N, &result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, utf16_t result[N]) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_string>(env, value, "string");
+      if (err < 0) return err;
+    }
+
+    size_t len;
+    err = js_get_value_string_utf16le(env, value, result, N, &len);
+    if (err < 0) return err;
+
+    assert(len == N);
+
+    return 0;
+  }
+};
+
+template <size_t N>
+struct js_type_info_t<const utf16_t[N]> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf16_t value[N], js_value_t *&result) {
+    return js_create_string_utf16le(env, value, N, &result);
+  }
+};
+
+template <>
+struct js_type_info_t<utf16_t *> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf16_t *value, js_value_t *&result) {
+    return js_create_string_utf16le(env, value, -1, &result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, utf16_t *&result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_string>(env, value, "string");
+      if (err < 0) return err;
+    }
+
+    size_t len;
+    err = js_get_value_string_utf16le(env, value, nullptr, 0, &len);
+    if (err < 0) return err;
+
+    len += 1 /* NULL */;
+    result = new utf16_t[len];
+
+    return js_get_value_string_utf16le(env, value, result, len, nullptr);
+  }
+};
+
+template <>
+struct js_type_info_t<const utf16_t *> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_string;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const utf16_t *value, js_value_t *&result) {
+    return js_create_string_utf16le(env, value, -1, &result);
+  }
+};
+
+template <size_t N>
 struct js_type_info_t<char[N]> {
   using type = js_value_t *;
 

@@ -245,6 +245,44 @@ The elements of a `TypedArray` in JavaScript that is a view of elements of any t
 
 An `external` value in JavaScript that is a pointer to an element of type `T`.
 
+#### `utf8_t[N]`
+
+A `string` in JavaScript represented as a UTF-8 `NULL`-terminated C string of `N` characters.
+
+#### `const utf8_t[N]`
+
+A `string` in JavaScript represented as an immutable UTF-8 `NULL`-terminated C string of `N` characters.
+
+#### `utf8_t *`
+
+A `string` in JavaScript represented as a UTF-8 `NULL`-terminated C string.
+
+> [!IMPORTANT]
+> When unmarshalling JavaScript strings to `utf8_t *` the caller is responsible for calling `delete[]` when the C string is no longer required.
+
+#### `const utf8_t *`
+
+A `string` in JavaScript represented as an immutable UTF-8 `NULL`-terminated C string.
+
+#### `utf16_t[N]`
+
+A `string` in JavaScript represented as a UTF-16LE `NULL`-terminated C string of `N` characters.
+
+#### `const utf16_t[N]`
+
+A `string` in JavaScript represented as an immutable UTF-16LE `NULL`-terminated C string of `N` characters.
+
+#### `utf16_t *`
+
+A `string` in JavaScript represented as a UTF-16LE `NULL`-terminated C string.
+
+> [!IMPORTANT]
+> When unmarshalling JavaScript strings to `utf16_t *` the caller is responsible for calling `delete[]` when the C string is no longer required.
+
+#### `const utf16_t *`
+
+A `string` in JavaScript represented as an immutable UTF-16LE `NULL`-terminated C string.
+
 #### `char[N]`
 
 A `string` in JavaScript represented as a `NULL`-terminated C string of `N` characters.
