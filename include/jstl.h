@@ -3256,6 +3256,11 @@ js_create_arraybuffer(js_env_t *env, const std::vector<T> &data, js_arraybuffer_
   return 0;
 }
 
+static inline auto
+js_detach_arraybuffer(js_env_t *env, const js_arraybuffer_t &arraybuffer) {
+  return js_detach_arraybuffer(env, static_cast<js_value_t *>(arraybuffer));
+}
+
 template <js_typedarray_element_t T>
 static inline auto
 js_create_typedarray(js_env_t *env, size_t len, const js_arraybuffer_t &arraybuffer, size_t offset, js_typedarray_t<T> &result) {
