@@ -3256,6 +3256,12 @@ js_create_arraybuffer(js_env_t *env, const std::vector<T> &data, js_arraybuffer_
   return 0;
 }
 
+template <typename T>
+static inline auto
+js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffer_t &result) {
+  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), nullptr, nullptr, static_cast<js_value_t **>(result));
+}
+
 static inline auto
 js_detach_arraybuffer(js_env_t *env, const js_arraybuffer_t &arraybuffer) {
   return js_detach_arraybuffer(env, static_cast<js_value_t *>(arraybuffer));
