@@ -4125,3 +4125,27 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, std::
 
   return 0;
 }
+
+template <typename T>
+static inline auto
+js_wrap(js_env_t *env, const js_object_t &object, T *data) {
+  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), nullptr, nullptr, nullptr);
+}
+
+template <typename T>
+static inline auto
+js_unwrap(js_env_t *env, const js_object_t &object, T *&result) {
+  return js_unwrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void **>(&result));
+}
+
+template <typename T>
+static inline auto
+js_remove_wrap(js_env_t *env, const js_object_t &object) {
+  return js_remove_wrap(env, static_cast<js_value_t *>(object), nullptr);
+}
+
+template <typename T>
+static inline auto
+js_remove_wrap(js_env_t *env, const js_object_t &object, T *&result) {
+  return js_remove_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void **>(&result));
+}
