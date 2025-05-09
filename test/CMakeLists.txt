@@ -68,6 +68,8 @@ list(APPEND tests
   create-typedarray-get-info-copy
   create-typedarray-get-info-data-cast
   create-typedarray-get-info-move-assign
+  set-get-property-literal-char-array
+  set-get-property-literal-char-pointer
   set-get-property-literal-function-pointer
   set-get-property-literal-int32
   set-get-property-literal-struct

@@ -1733,6 +1733,26 @@ struct js_type_info_t<char *> {
   marshall(js_env_t *env, const char *value, js_value_t *&result) {
     return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
   }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, char *&result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_string>(env, value, "string");
+      if (err < 0) return err;
+    }
+
+    size_t len;
+    err = js_get_value_string_utf8(env, value, nullptr, 0, &len);
+    if (err < 0) return err;
+
+    len += 1 /* NULL */;
+    result = new char[len];
+
+    return js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result), len, nullptr);
+  }
 };
 
 template <>
