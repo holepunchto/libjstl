@@ -257,6 +257,9 @@ A `string` in JavaScript represented as an immutable `NULL`-terminated C string 
 
 A `string` in JavaScript represented as a `NULL`-terminated C string.
 
+> [!IMPORTANT]
+> When unmarshalling JavaScript strings to `char *` the caller is responsible for calling `delete[]` when the C string is no longer required.
+
 #### `const char *`
 
 A `string` in JavaScript represented as an immutable `NULL`-terminated C string.
