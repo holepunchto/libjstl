@@ -4,7 +4,6 @@
 #include <optional>
 #include <span>
 #include <string>
-#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -14,23 +13,29 @@
 #include <utf.h>
 
 #ifndef NDEBUG
-static constexpr bool js_is_debug = true;
+constexpr bool js_is_debug = true;
 #else
-static constexpr bool js_is_debug = false;
+constexpr bool js_is_debug = false;
 #endif
+
+template <typename A, typename B>
+constexpr bool js_is_same = false;
+
+template <typename A>
+constexpr bool js_is_same<A, A> = true;
 
 template <typename T>
 concept js_typedarray_element_t =
-  std::same_as<T, int8_t> ||
-  std::same_as<T, uint8_t> ||
-  std::same_as<T, int16_t> ||
-  std::same_as<T, uint16_t> ||
-  std::same_as<T, int32_t> ||
-  std::same_as<T, uint32_t> ||
-  std::same_as<T, int64_t> ||
-  std::same_as<T, uint64_t> ||
-  std::same_as<T, float> ||
-  std::same_as<T, double>;
+  js_is_same<T, int8_t> ||
+  js_is_same<T, uint8_t> ||
+  js_is_same<T, int16_t> ||
+  js_is_same<T, uint16_t> ||
+  js_is_same<T, int32_t> ||
+  js_is_same<T, uint32_t> ||
+  js_is_same<T, int64_t> ||
+  js_is_same<T, uint64_t> ||
+  js_is_same<T, float> ||
+  js_is_same<T, double>;
 
 struct js_typedarray_element_any_t;
 
@@ -161,7 +166,9 @@ struct js_persistent_t {
 
   js_persistent_t(js_env_t *env, js_ref_t *ref) : env_(env), ref_(ref) {};
 
-  js_persistent_t(js_persistent_t &&that) : env_(that.env_), ref_(std::exchange(that.ref_, nullptr)) {}
+  js_persistent_t(js_persistent_t &&that) : env_(that.env_), ref_(that.ref_) {
+    that.ref_ = nullptr;
+  }
 
   js_persistent_t(const js_persistent_t &) = delete;
 
@@ -172,7 +179,9 @@ struct js_persistent_t {
   void
   operator=(js_persistent_t &&that) {
     this->env_ = that.env_;
-    this->ref_ = std::exchange(that.ref_, nullptr);
+    this->ref_ = that.ref_;
+
+    that.ref_ = nullptr;
   }
 
   void
@@ -2427,7 +2436,7 @@ struct js_argument_info_t<> {
 
 template <typename T, typename... R>
 struct js_argument_info_t<T, R...> {
-  static constexpr bool has_receiver = std::is_same<T, js_receiver_t>();
+  static constexpr bool has_receiver = js_is_same<T, js_receiver_t>;
 };
 
 struct js_function_options_t : js_type_options_t {
@@ -2454,7 +2463,7 @@ struct js_typed_callback_t<fn> {
   static auto
   create() {
     if constexpr (options.scoped) {
-      if constexpr (std::is_same<typename js_type_info_t<R>::type, js_value_t *>()) {
+      if constexpr (js_is_same<typename js_type_info_t<R>::type, js_value_t *>) {
         return create_with_escapable_scope<options>();
       } else {
         return create_with_scope<options>();
@@ -3205,11 +3214,11 @@ static inline auto
 js_create_arraybuffer(js_env_t *env, const T data[N], js_arraybuffer_t &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_arraybuffer(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + N, view.begin());
+  std::copy(data, data + N, view);
 
   return 0;
 }
@@ -3219,11 +3228,11 @@ static inline auto
 js_create_arraybuffer(js_env_t *env, const std::array<T, N> data, js_arraybuffer_t &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_arraybuffer(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3233,11 +3242,11 @@ static inline auto
 js_create_arraybuffer(js_env_t *env, const std::span<T> &data, js_arraybuffer_t &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_arraybuffer(env, data.size(), view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3247,11 +3256,11 @@ static inline auto
 js_create_arraybuffer(js_env_t *env, const std::vector<T> &data, js_arraybuffer_t &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_arraybuffer(env, data.size(), view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3387,11 +3396,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<T> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + N, view.begin());
+  std::copy(data, data + N, view);
 
   return 0;
 }
@@ -3401,11 +3410,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + N, view.begin());
+  std::copy(data, data + N, view);
 
   return 0;
 }
@@ -3415,11 +3424,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const std::array<T, N> data, js_typedarray_t<T> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3429,11 +3438,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const std::array<T, N> data, js_typedarray_t<> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3443,11 +3452,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const std::span<T> &data, js_typedarray_t<T> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, data.size(), view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3457,11 +3466,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const std::span<T> &data, js_typedarray_t<> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, data.size(), view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3471,11 +3480,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const std::vector<T> &data, js_typedarray_t<T> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, data.size(), view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
@@ -3485,11 +3494,11 @@ static inline auto
 js_create_typedarray(js_env_t *env, const std::vector<T> &data, js_typedarray_t<> &result) {
   int err;
 
-  std::span<T> view;
+  T *view;
   err = js_create_typedarray(env, data.size(), view, result);
   if (err < 0) return err;
 
-  std::copy(data.begin(), data.end(), view.begin());
+  std::copy(data.begin(), data.end(), view);
 
   return 0;
 }
