@@ -1,6 +1,8 @@
 fetch_package("github:holepunchto/libjs")
 
 list(APPEND tests
+  create-external-arraybuffer-with-finalizer
+  create-external-arraybuffer-with-finalizer-detach
   create-function-pointer
   create-function-receiver
   create-function-receiver-no-env
