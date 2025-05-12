@@ -1621,9 +1621,7 @@ struct js_type_info_t<js_function_t<R, A...>> {
       if (err < 0) return err;
     }
 
-    result = js_function_t<R, A...>(value);
-
-    return 0;
+    return unmarshall(value, result);
   }
 };
 
