@@ -2989,6 +2989,27 @@ struct js_function_info_t<fn> {
   }
 };
 
+template <auto fn>
+struct js_finalizer_info_t;
+
+template <typename T, void fn(js_env_t *, T *)>
+struct js_finalizer_info_t<fn> {
+  using type = T;
+
+  static auto
+  create() {
+    return +[](js_env_t *env, void *data, void *finalize_hint) -> void {
+      fn(env, static_cast<T *>(data));
+    };
+  }
+};
+
+template <auto fn>
+static inline auto
+js_create_finalizer() {
+  return js_finalizer_info_t<fn>::create();
+}
+
 template <auto fn, js_function_options_t options = {}>
 static inline auto
 js_create_function(js_env_t *env, const char *name, size_t len, typename js_function_info_t<fn>::type &result) {
@@ -3271,14 +3292,10 @@ js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffe
   return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), nullptr, nullptr, static_cast<js_value_t **>(result));
 }
 
-template <auto finalizer, typename T>
+template <auto finalize, typename T>
 static inline auto
 js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffer_t &result) {
-  auto finalize = +[](js_env_t *env, void *data, void *finalize_hint) -> void {
-    finalizer(env, static_cast<T *>(data));
-  };
-
-  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), finalize, nullptr, static_cast<js_value_t **>(result));
+  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize>(), nullptr, static_cast<js_value_t **>(result));
 }
 
 static inline auto
@@ -4162,14 +4179,10 @@ js_wrap(js_env_t *env, const js_object_t &object, T *data) {
   return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), nullptr, nullptr, nullptr);
 }
 
-template <auto finalizer, typename T>
+template <auto finalize, typename T>
 static inline auto
 js_wrap(js_env_t *env, const js_object_t &object, T *data) {
-  auto finalize = +[](js_env_t *env, void *data, void *finalize_hint) -> void {
-    finalizer(env, static_cast<T *>(data));
-  };
-
-  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), finalize, nullptr, nullptr);
+  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize>(), nullptr, nullptr);
 }
 
 template <typename T>
