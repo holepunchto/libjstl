@@ -2990,11 +2990,11 @@ struct js_function_info_t<fn> {
   }
 };
 
-template <auto fn>
+template <auto fn, typename T, typename U = void>
 struct js_finalizer_info_t;
 
 template <typename T, void fn(js_env_t *, T *)>
-struct js_finalizer_info_t<fn> {
+struct js_finalizer_info_t<fn, T> {
   using type = T;
 
   static auto
@@ -3006,7 +3006,7 @@ struct js_finalizer_info_t<fn> {
 };
 
 template <typename T, typename U, void fn(js_env_t *, T *, U *)>
-struct js_finalizer_info_t<fn> {
+struct js_finalizer_info_t<fn, T, U> {
   using type = T;
 
   static auto
@@ -3017,10 +3017,10 @@ struct js_finalizer_info_t<fn> {
   }
 };
 
-template <auto fn>
+template <auto fn, typename T, typename U = void>
 static inline auto
 js_create_finalizer() {
-  return js_finalizer_info_t<fn>::create();
+  return js_finalizer_info_t<fn, T, U>::create();
 }
 
 template <auto fn, js_function_options_t options = {}>
@@ -3308,13 +3308,13 @@ js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffe
 template <auto finalize, typename T>
 static inline auto
 js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffer_t &result) {
-  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize>(), nullptr, static_cast<js_value_t **>(result));
+  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize, T>(), nullptr, static_cast<js_value_t **>(result));
 }
 
 template <auto finalize, typename T, typename U>
 static inline auto
 js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, U *finalize_hint, js_arraybuffer_t &result) {
-  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize>(), reinterpret_cast<void *>(finalize_hint), static_cast<js_value_t **>(result));
+  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize, T, U>(), reinterpret_cast<void *>(finalize_hint), static_cast<js_value_t **>(result));
 }
 
 static inline auto
@@ -4201,13 +4201,13 @@ js_wrap(js_env_t *env, const js_object_t &object, T *data) {
 template <auto finalize, typename T>
 static inline auto
 js_wrap(js_env_t *env, const js_object_t &object, T *data) {
-  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize>(), nullptr, nullptr);
+  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize, T>(), nullptr, nullptr);
 }
 
 template <auto finalize, typename T, typename U>
 static inline auto
 js_wrap(js_env_t *env, const js_object_t &object, T *data, U *finalize_hint) {
-  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize>(), reinterpret_cast<void *>(finalize_hint), nullptr);
+  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize, T, U>(), reinterpret_cast<void *>(finalize_hint), nullptr);
 }
 
 template <typename T>
@@ -4237,13 +4237,13 @@ js_create_external(js_env_t *env, T *data, js_external_t<T> &result) {
 template <auto finalize, typename T>
 static inline auto
 js_create_external(js_env_t *env, T *data, js_external_t<T> &result) {
-  return js_create_external(env, data, js_create_finalizer<finalize>(), nullptr, static_cast<js_value_t **>(result));
+  return js_create_external(env, data, js_create_finalizer<finalize, T>(), nullptr, static_cast<js_value_t **>(result));
 }
 
 template <auto finalize, typename T, typename U>
 static inline auto
 js_create_external(js_env_t *env, T *data, U *finalize_hint, js_external_t<T> &result) {
-  return js_create_external(env, data, js_create_finalizer<finalize>(), reinterpret_cast<void *>(finalize_hint), static_cast<js_value_t **>(result));
+  return js_create_external(env, data, js_create_finalizer<finalize, T, U>(), reinterpret_cast<void *>(finalize_hint), static_cast<js_value_t **>(result));
 }
 
 template <typename T>
