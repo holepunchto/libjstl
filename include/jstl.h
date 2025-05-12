@@ -2892,13 +2892,13 @@ private:
 
 template <auto fn, js_function_options_t options = {}>
 static inline auto
-js_typed_callback() {
+js_create_typed_callback() {
   return js_typed_callback_t<fn>::template create<options>();
 }
 
 template <auto fn, js_function_options_t options = {}>
 static inline auto
-js_untyped_callback() {
+js_create_untyped_callback() {
   return js_untyped_callback_t<fn>::template create<options>();
 }
 
@@ -2914,9 +2914,9 @@ struct js_function_info_t<fn> {
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
     int err;
 
-    auto typed = js_typed_callback<fn, options>();
+    auto typed = js_create_typed_callback<fn, options>();
 
-    auto untyped = js_untyped_callback<fn, options>();
+    auto untyped = js_create_untyped_callback<fn, options>();
 
     js_callback_signature_t signature;
 
@@ -2956,9 +2956,9 @@ struct js_function_info_t<fn> {
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
     int err;
 
-    auto typed = js_typed_callback<fn, options>();
+    auto typed = js_create_typed_callback<fn, options>();
 
-    auto untyped = js_untyped_callback<fn, options>();
+    auto untyped = js_create_untyped_callback<fn, options>();
 
     js_callback_signature_t signature;
 
