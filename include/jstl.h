@@ -1592,6 +1592,26 @@ struct js_type_info_t<js_function_t<R, A...>> {
 
   static constexpr auto signature = js_function;
 
+  static auto
+  marshall(const js_function_t<R, A...> &function, js_value_t *&result) {
+    result = static_cast<js_value_t *>(function);
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, const js_function_t<R, A...> &receiver, js_value_t *&result) {
+    return marshall(receiver, result);
+  }
+
+  static auto
+  unmarshall(js_value_t *value, js_function_t<R, A...> &result) {
+    result = js_function_t<R, A...>(value);
+
+    return 0;
+  }
+
   template <js_type_options_t options>
   static auto
   unmarshall(js_env_t *env, js_value_t *value, js_function_t<R, A...> &result) {
