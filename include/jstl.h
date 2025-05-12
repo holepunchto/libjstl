@@ -3271,7 +3271,7 @@ js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffe
   return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), nullptr, nullptr, static_cast<js_value_t **>(result));
 }
 
-template <typename T, void finalizer(js_env_t *, T *)>
+template <auto finalizer, typename T>
 static inline auto
 js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffer_t &result) {
   auto finalize = +[](js_env_t *env, void *data, void *finalize_hint) -> void {
@@ -4162,7 +4162,7 @@ js_wrap(js_env_t *env, const js_object_t &object, T *data) {
   return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), nullptr, nullptr, nullptr);
 }
 
-template <typename T, void finalizer(js_env_t *, T *)>
+template <auto finalizer, typename T>
 static inline auto
 js_wrap(js_env_t *env, const js_object_t &object, T *data) {
   auto finalize = +[](js_env_t *env, void *data, void *finalize_hint) -> void {

@@ -38,7 +38,7 @@ main() {
   data[4] = 'o';
 
   js_arraybuffer_t arraybuffer;
-  e = js_create_external_arraybuffer<uint8_t, on_finalize>(env, data, 5, arraybuffer);
+  e = js_create_external_arraybuffer<on_finalize>(env, data, 5, arraybuffer);
   assert(e == 0);
 
   e = js_close_handle_scope(env, scope);
