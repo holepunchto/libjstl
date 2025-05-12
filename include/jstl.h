@@ -2990,13 +2990,21 @@ struct js_function_info_t<fn> {
   }
 };
 
-template <auto fn, typename T, typename U = void>
+template <auto fn, typename T = void, typename U = void>
 struct js_finalizer_info_t;
+
+template <void fn(js_env_t *)>
+struct js_finalizer_info_t<fn> {
+  static auto
+  create() {
+    return +[](js_env_t *env, void *data, void *finalize_hint) -> void {
+      fn(env);
+    };
+  }
+};
 
 template <typename T, void fn(js_env_t *, T *)>
 struct js_finalizer_info_t<fn, T> {
-  using type = T;
-
   static auto
   create() {
     return +[](js_env_t *env, void *data, void *finalize_hint) -> void {
@@ -3007,8 +3015,6 @@ struct js_finalizer_info_t<fn, T> {
 
 template <typename T, typename U, void fn(js_env_t *, T *, U *)>
 struct js_finalizer_info_t<fn, T, U> {
-  using type = T;
-
   static auto
   create() {
     return +[](js_env_t *env, void *data, void *finalize_hint) -> void {
@@ -3017,7 +3023,7 @@ struct js_finalizer_info_t<fn, T, U> {
   }
 };
 
-template <auto fn, typename T, typename U = void>
+template <auto fn, typename T = void, typename U = void>
 static inline auto
 js_create_finalizer() {
   return js_finalizer_info_t<fn, T, U>::create();
@@ -4250,4 +4256,22 @@ template <typename T>
 static inline auto
 js_get_value_external(js_env_t *env, const js_external_t<T> &external, T *&result) {
   return js_get_value_external(env, static_cast<js_value_t *>(external), reinterpret_cast<void **>(&result));
+}
+
+template <auto finalize>
+static inline auto
+js_add_finalizer(js_env_t *env, const js_object_t &object) {
+  return js_add_finalizer(env, static_cast<js_value_t *>(object), nullptr, js_create_finalizer<finalize>(), nullptr, nullptr);
+}
+
+template <auto finalize, typename T>
+static inline auto
+js_add_finalizer(js_env_t *env, const js_object_t &object, T *data) {
+  return js_add_finalizer(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize, T>(), nullptr, nullptr);
+}
+
+template <auto finalize, typename T, typename U>
+static inline auto
+js_add_finalizer(js_env_t *env, const js_object_t &object, T *data, U *finalize_hint) {
+  return js_add_finalizer(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize, T, U>(), reinterpret_cast<void *>(finalize_hint), nullptr);
 }
