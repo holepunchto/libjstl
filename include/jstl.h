@@ -154,6 +154,7 @@ struct js_function_t : js_object_t {
   explicit js_function_t(js_value_t *value) : js_object_t(value) {}
 };
 
+template <typename T>
 struct js_external_t : js_handle_t {
   js_external_t() : js_handle_t() {}
 
@@ -1606,15 +1607,15 @@ struct js_type_info_t<js_function_t<R, A...>> {
   }
 };
 
-template <>
-struct js_type_info_t<js_external_t> {
+template <typename T>
+struct js_type_info_t<js_external_t<T>> {
   using type = js_value_t *;
 
   static constexpr auto signature = js_external;
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, const js_external_t &external, js_value_t *&result) {
+  marshall(js_env_t *, const js_external_t<T> &external, js_value_t *&result) {
     result = static_cast<js_value_t *>(external);
 
     return 0;
@@ -1622,14 +1623,14 @@ struct js_type_info_t<js_external_t> {
 
   template <js_type_options_t options>
   static auto
-  unmarshall(js_env_t *env, js_value_t *value, js_external_t &result) {
+  unmarshall(js_env_t *env, js_value_t *value, js_external_t<T> &result) {
     if constexpr (options.checked) {
       int err;
       err = js_check_value<js_is_external>(env, value, "external");
       if (err < 0) return err;
     }
 
-    result = js_external_t(value);
+    result = js_external_t<T>(value);
 
     return 0;
   }
@@ -3004,6 +3005,18 @@ struct js_finalizer_info_t<fn> {
   }
 };
 
+template <typename T, typename U, void fn(js_env_t *, T *, U *)>
+struct js_finalizer_info_t<fn> {
+  using type = T;
+
+  static auto
+  create() {
+    return +[](js_env_t *env, void *data, void *finalize_hint) -> void {
+      fn(env, static_cast<T *>(data), static_cast<U *>(finalize_hint));
+    };
+  }
+};
+
 template <auto fn>
 static inline auto
 js_create_finalizer() {
@@ -3296,6 +3309,12 @@ template <auto finalize, typename T>
 static inline auto
 js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, js_arraybuffer_t &result) {
   return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize>(), nullptr, static_cast<js_value_t **>(result));
+}
+
+template <auto finalize, typename T, typename U>
+static inline auto
+js_create_external_arraybuffer(js_env_t *env, T *data, size_t len, U *finalize_hint, js_arraybuffer_t &result) {
+  return js_create_external_arraybuffer(env, reinterpret_cast<void *>(data), len * sizeof(T), js_create_finalizer<finalize>(), reinterpret_cast<void *>(finalize_hint), static_cast<js_value_t **>(result));
 }
 
 static inline auto
@@ -4185,6 +4204,12 @@ js_wrap(js_env_t *env, const js_object_t &object, T *data) {
   return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize>(), nullptr, nullptr);
 }
 
+template <auto finalize, typename T, typename U>
+static inline auto
+js_wrap(js_env_t *env, const js_object_t &object, T *data, U *finalize_hint) {
+  return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize>(), reinterpret_cast<void *>(finalize_hint), nullptr);
+}
+
 template <typename T>
 static inline auto
 js_unwrap(js_env_t *env, const js_object_t &object, T *&result) {
@@ -4201,4 +4226,28 @@ template <typename T>
 static inline auto
 js_remove_wrap(js_env_t *env, const js_object_t &object, T *&result) {
   return js_remove_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void **>(&result));
+}
+
+template <typename T>
+static inline auto
+js_create_external(js_env_t *env, T *data, js_external_t<T> &result) {
+  return js_create_external(env, data, nullptr, nullptr, static_cast<js_value_t **>(result));
+}
+
+template <auto finalize, typename T>
+static inline auto
+js_create_external(js_env_t *env, T *data, js_external_t<T> &result) {
+  return js_create_external(env, data, js_create_finalizer<finalize>(), nullptr, static_cast<js_value_t **>(result));
+}
+
+template <auto finalize, typename T, typename U>
+static inline auto
+js_create_external(js_env_t *env, T *data, U *finalize_hint, js_external_t<T> &result) {
+  return js_create_external(env, data, js_create_finalizer<finalize>(), reinterpret_cast<void *>(finalize_hint), static_cast<js_value_t **>(result));
+}
+
+template <typename T>
+static inline auto
+js_get_value_external(js_env_t *env, const js_external_t<T> &external, T *&result) {
+  return js_get_value_external(env, static_cast<js_value_t *>(external), reinterpret_cast<void **>(&result));
 }

@@ -54,7 +54,7 @@ js_value_t **handle = static_cast<js_value_t **>(boolean);
 
 #### `js_function_t<R, A...>`
 
-#### `js_external_t`
+#### `js_external_t<T>`
 
 ### Type marshalling
 
