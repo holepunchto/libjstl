@@ -3139,6 +3139,72 @@ js_call_function(js_env_t *env, const js_function_t<R, A...> &function, const A 
   }
 }
 
+template <js_type_options_t options = {}, typename... A>
+static inline auto
+js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> &function, const A &...args) {
+  int err;
+
+  size_t argc = sizeof...(A);
+
+  try {
+    js_value_t *argv[] = {
+      js_marshall_untyped_value<options, A>(env, args...)...
+    };
+
+    js_value_t *receiver;
+
+    size_t offset = 0;
+
+    if constexpr (js_argument_info_t<A...>::has_receiver) {
+      receiver = argv[0];
+      offset = 1;
+    } else {
+      err = js_get_global(env, &receiver);
+      assert(err == 0);
+    }
+
+    return js_call_function_with_checkpoint(env, receiver, static_cast<js_value_t *>(function), argc - offset, &argv[offset], nullptr);
+  } catch (int err) {
+    return err;
+  }
+}
+
+template <js_type_options_t options = {}, typename R, typename... A>
+static inline auto
+js_call_function_with_checkpoint(js_env_t *env, const js_function_t<R, A...> &function, const A &...args, R &result) {
+  int err;
+
+  size_t argc = sizeof...(A);
+
+  try {
+    js_value_t *argv[] = {
+      js_marshall_untyped_value<options, A>(env, args...)...
+    };
+
+    js_value_t *receiver;
+
+    size_t offset = 0;
+
+    if constexpr (js_argument_info_t<A...>::has_receiver) {
+      receiver = argv[0];
+      offset = 1;
+    } else {
+      err = js_get_global(env, &receiver);
+      assert(err == 0);
+    }
+
+    js_value_t *value;
+    err = js_call_function_with_checkpoint(env, receiver, static_cast<js_value_t *>(function), argc - offset, &argv[offset], &value);
+    if (err < 0) return err;
+
+    result = js_unmarshall_untyped_value<options, R>(env, value);
+
+    return 0;
+  } catch (int err) {
+    return err;
+  }
+}
+
 static inline auto
 js_create_object(js_env_t *env, js_object_t &result) {
   return js_create_object(env, static_cast<js_value_t **>(result));
