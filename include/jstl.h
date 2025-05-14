@@ -196,6 +196,10 @@ struct js_persistent_t {
     return &ref_;
   }
 
+  explicit operator js_env_t **() {
+    return &env_;
+  }
+
   void
   reset() {
     if (ref_ == nullptr) return;
@@ -4233,12 +4237,14 @@ js_run_script(js_env_t *env, const js_string_t &source, js_handle_t &result) {
 template <typename T>
 static inline auto
 js_create_reference(js_env_t *env, const T &value, js_persistent_t<T> &result) {
+  *static_cast<js_env_t **>(result) = env;
   return js_create_reference(env, static_cast<js_value_t *>(value), 1, static_cast<js_ref_t **>(result));
 }
 
 template <typename T>
 static inline auto
 js_create_weak_reference(js_env_t *env, const T &value, js_persistent_t<T> &result) {
+  *static_cast<js_env_t **>(result) = env;
   return js_create_reference(env, static_cast<js_value_t *>(value), 0, static_cast<js_ref_t **>(result));
 }
 
