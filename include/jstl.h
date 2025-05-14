@@ -394,10 +394,6 @@ struct js_type_options_t {
   bool checked = js_is_debug;
 };
 
-struct js_function_options_t : js_type_options_t {
-  bool scoped = true;
-};
-
 template <typename T>
 struct js_type_info_t;
 
@@ -2379,12 +2375,6 @@ js_marshall_typed_value(js_env_t *env, T value) {
   return result;
 }
 
-template <js_function_options_t options = js_function_options_t(), typename T>
-static inline auto
-js_marshall_typed_value(js_env_t *env, T value) {
-  return js_marshall_typed_value<static_cast<js_type_options_t>(options), T>(env, value);
-}
-
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
 js_marshall_untyped_value(js_env_t *env, T value) {
@@ -2397,12 +2387,6 @@ js_marshall_untyped_value(js_env_t *env, T value) {
   return result;
 }
 
-template <js_function_options_t options = js_function_options_t(), typename T>
-static inline auto
-js_marshall_untyped_value(js_env_t *env, T value) {
-  return js_marshall_untyped_value<static_cast<js_type_options_t>(options), T>(env, value);
-}
-
 template <js_type_options_t options = js_type_options_t()>
 static inline auto
 js_marshall_untyped_value(js_env_t *env) {
@@ -2413,12 +2397,6 @@ js_marshall_untyped_value(js_env_t *env) {
   if (err < 0) throw err;
 
   return result;
-}
-
-template <js_function_options_t options = js_function_options_t()>
-static inline auto
-js_marshall_untyped_value(js_env_t *env) {
-  return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
 }
 
 template <typename T>
@@ -2445,12 +2423,6 @@ js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value)
   return result;
 }
 
-template <js_function_options_t options = js_function_options_t(), typename T>
-static inline auto
-js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value) {
-  return js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), T>(env, value);
-}
-
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
 js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
@@ -2461,12 +2433,6 @@ js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
   if (err < 0) throw err;
 
   return result;
-}
-
-template <js_function_options_t options = js_function_options_t(), typename T>
-static inline auto
-js_unmarshall_typed_value(js_env_t *env, js_value_t *value) {
-  return js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), T>(env, value);
 }
 
 template <typename...>
@@ -2480,6 +2446,10 @@ struct js_argument_info_t<> {
 template <typename T, typename... R>
 struct js_argument_info_t<T, R...> {
   static constexpr bool has_receiver = js_is_same<T, js_receiver_t>;
+};
+
+struct js_function_options_t : js_type_options_t {
+  bool scoped = true;
 };
 
 template <auto fn>
@@ -2530,7 +2500,7 @@ private:
       typename js_type_info_t<R>::type result;
 
       try {
-        result = js_marshall_typed_value<options, R>(env, fn(env, js_unmarshall_typed_value<options, A>(env, args)...));
+        result = js_marshall_typed_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...));
       } catch (int err) {
         assert(err != 0);
       }
@@ -2559,7 +2529,7 @@ private:
       typename js_type_info_t<R>::type result;
 
       try {
-        result = js_marshall_typed_value<options, R>(env, fn(env, js_unmarshall_typed_value<options, A>(env, args)...));
+        result = js_marshall_typed_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...));
 
         err = js_escape_handle(env, scope, result, &result);
         assert(err == 0);
@@ -2584,7 +2554,7 @@ private:
       err = js_get_typed_callback_info(info, &env, nullptr);
       assert(err == 0);
 
-      return js_marshall_typed_value<options, R>(env, fn(env, js_unmarshall_typed_value<options, A>(env, args)...));
+      return js_marshall_typed_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...));
     };
   }
 };
@@ -2628,7 +2598,7 @@ private:
       assert(err == 0);
 
       try {
-        fn(env, js_unmarshall_typed_value<options, A>(env, args)...);
+        fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...);
       } catch (int err) {
         assert(err != 0);
       }
@@ -2649,7 +2619,7 @@ private:
       assert(err == 0);
 
       try {
-        fn(env, js_unmarshall_typed_value<options, A>(env, args)...);
+        fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...);
       } catch (int err) {
         assert(err != 0);
       }
@@ -2695,7 +2665,7 @@ private:
       js_value_t *result;
 
       try {
-        result = js_marshall_untyped_value<options, R>(env, fn(js_unmarshall_untyped_value<options, A>(env, argv[I])...));
+        result = js_marshall_untyped_value<static_cast<js_type_options_t>(options), R>(env, fn(js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...));
       } catch (int err) {
         assert(err != 0);
       }
@@ -2748,7 +2718,7 @@ private:
       js_value_t *result;
 
       try {
-        result = js_marshall_untyped_value<options, R>(env, fn(env, js_unmarshall_untyped_value<options, A>(env, argv[I])...));
+        result = js_marshall_untyped_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...));
 
         err = js_escape_handle(env, scope, result, &result);
         assert(err == 0);
@@ -2789,7 +2759,7 @@ private:
       js_value_t *result;
 
       try {
-        result = js_marshall_untyped_value<options, R>(env, fn(env, js_unmarshall_untyped_value<options, A>(env, argv[I])...));
+        result = js_marshall_untyped_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...));
       } catch (int err) {
         assert(err != 0);
       }
@@ -2832,12 +2802,12 @@ private:
       assert(argc == sizeof...(A));
 
       try {
-        fn(js_unmarshall_untyped_value<options, A>(env, argv[I])...);
+        fn(js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...);
       } catch (int err) {
         assert(err != 0);
       }
 
-      return js_marshall_untyped_value<options>(env);
+      return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
     };
   }
 };
@@ -2883,7 +2853,7 @@ private:
       assert(argc == sizeof...(A));
 
       try {
-        fn(env, js_unmarshall_untyped_value<options, A>(env, argv[I])...);
+        fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...);
       } catch (int err) {
         assert(err != 0);
       }
@@ -2891,7 +2861,7 @@ private:
       err = js_close_handle_scope(env, scope);
       assert(err == 0);
 
-      return js_marshall_untyped_value<options>(env);
+      return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
     };
   }
 
@@ -2919,12 +2889,12 @@ private:
       assert(argc == sizeof...(A));
 
       try {
-        fn(env, js_unmarshall_untyped_value<options, A>(env, argv[I])...);
+        fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...);
       } catch (int err) {
         assert(err != 0);
       }
 
-      return js_marshall_untyped_value<options>(env);
+      return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
     };
   }
 };
@@ -3933,7 +3903,7 @@ js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name) {
   int err;
 
   js_object_t unmarshalled;
-  err = js_type_info_t<js_object_t>::template unmarshall<options>(env, object, unmarshalled);
+  err = js_type_info_t<js_object_t>::template unmarshall<static_cast<js_type_options_t>(options)>(env, object, unmarshalled);
   if (err < 0) return err;
 
   return js_set_property<fn, options>(env, unmarshalled, name);
@@ -3957,7 +3927,7 @@ js_set_property(js_env_t *env, js_value_t *object, const char *name) {
   int err;
 
   js_object_t unmarshalled;
-  err = js_type_info_t<js_object_t>::template unmarshall<options>(env, object, unmarshalled);
+  err = js_type_info_t<js_object_t>::template unmarshall<static_cast<js_type_options_t>(options)>(env, object, unmarshalled);
   if (err < 0) return err;
 
   return js_set_property<fn, options>(env, unmarshalled, name);
@@ -4027,7 +3997,7 @@ js_set_element(js_env_t *env, js_value_t *object, uint32_t index) {
   int err;
 
   js_object_t unmarshalled;
-  err = js_type_info_t<js_object_t>::template unmarshall<options>(env, object, unmarshalled);
+  err = js_type_info_t<js_object_t>::template unmarshall<static_cast<js_type_options_t>(options)>(env, object, unmarshalled);
   if (err < 0) return err;
 
   return js_set_element<fn, options>(env, unmarshalled, index);
