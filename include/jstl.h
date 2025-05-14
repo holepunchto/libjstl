@@ -394,6 +394,10 @@ struct js_type_options_t {
   bool checked = js_is_debug;
 };
 
+struct js_function_options_t : js_type_options_t {
+  bool scoped = true;
+};
+
 template <typename T>
 struct js_type_info_t;
 
@@ -2375,6 +2379,12 @@ js_marshall_typed_value(js_env_t *env, T value) {
   return result;
 }
 
+template <js_function_options_t options = js_function_options_t(), typename T>
+static inline auto
+js_marshall_typed_value(js_env_t *env, T value) {
+  return js_marshall_typed_value<static_cast<js_type_options_t>(options), T>(env, value);
+}
+
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
 js_marshall_untyped_value(js_env_t *env, T value) {
@@ -2387,6 +2397,12 @@ js_marshall_untyped_value(js_env_t *env, T value) {
   return result;
 }
 
+template <js_function_options_t options = js_function_options_t(), typename T>
+static inline auto
+js_marshall_untyped_value(js_env_t *env, T value) {
+  return js_marshall_untyped_value<static_cast<js_type_options_t>(options), T>(env, value);
+}
+
 template <js_type_options_t options = js_type_options_t()>
 static inline auto
 js_marshall_untyped_value(js_env_t *env) {
@@ -2397,6 +2413,12 @@ js_marshall_untyped_value(js_env_t *env) {
   if (err < 0) throw err;
 
   return result;
+}
+
+template <js_function_options_t options = js_function_options_t()>
+static inline auto
+js_marshall_untyped_value(js_env_t *env) {
+  return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
 }
 
 template <typename T>
@@ -2423,6 +2445,12 @@ js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value)
   return result;
 }
 
+template <js_function_options_t options = js_function_options_t(), typename T>
+static inline auto
+js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value) {
+  return js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), T>(env, value);
+}
+
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
 js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
@@ -2433,6 +2461,12 @@ js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
   if (err < 0) throw err;
 
   return result;
+}
+
+template <js_function_options_t options = js_function_options_t(), typename T>
+static inline auto
+js_unmarshall_typed_value(js_env_t *env, js_value_t *value) {
+  return js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), T>(env, value);
 }
 
 template <typename...>
@@ -2446,10 +2480,6 @@ struct js_argument_info_t<> {
 template <typename T, typename... R>
 struct js_argument_info_t<T, R...> {
   static constexpr bool has_receiver = js_is_same<T, js_receiver_t>;
-};
-
-struct js_function_options_t : js_type_options_t {
-  bool scoped = true;
 };
 
 template <auto fn>
