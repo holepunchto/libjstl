@@ -2899,13 +2899,13 @@ private:
   }
 };
 
-template <auto fn, js_function_options_t options = js_type_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t()>
 static inline auto
 js_create_typed_callback() {
   return js_typed_callback_t<fn>::template create<options>();
 }
 
-template <auto fn, js_function_options_t options = js_type_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t()>
 static inline auto
 js_create_untyped_callback() {
   return js_untyped_callback_t<fn>::template create<options>();
