@@ -1412,15 +1412,15 @@ js_typedarray_span_t(T *data, size_t len) -> js_typedarray_span_t<T>;
 
 template <>
 struct js_typedarray_span_t<js_typedarray_element_any_t> {
-  js_typedarray_span_t() : data_(nullptr), size_(0), element_size_(1) {}
+  js_typedarray_span_t() : data_(nullptr), size_(0) {}
 
-  js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) : data_(len == 0 ? nullptr : data), size_(len), element_size_(js_typedarray_element_size(type)) {}
-
-  template <typename T>
-  js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? nullptr : data), size_(len), element_size_(sizeof(T)) {}
+  js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) : data_(len == 0 ? nullptr : data), size_(len * js_typedarray_element_size(type)) {}
 
   template <typename T>
-  js_typedarray_span_t(const js_typedarray_span_t<T> &span) : data_(span.data()), size_(span.size()), element_size_(sizeof(T)) {}
+  js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? nullptr : data), size_(len * sizeof(T)) {}
+
+  template <typename T>
+  js_typedarray_span_t(const js_typedarray_span_t<T> &span) : data_(span.data()), size_(span.size_bytes()) {}
 
   template <typename T = uint8_t>
   T *
@@ -1431,12 +1431,12 @@ struct js_typedarray_span_t<js_typedarray_element_any_t> {
   template <typename T = uint8_t>
   size_t
   size() const {
-    return size_ * element_size_ / sizeof(T);
+    return size_ / sizeof(T);
   }
 
   size_t
   size_bytes() const {
-    return size_ * element_size_;
+    return size_;
   }
 
   bool
@@ -1459,7 +1459,6 @@ struct js_typedarray_span_t<js_typedarray_element_any_t> {
 private:
   void *data_;
   size_t size_;
-  size_t element_size_;
 };
 
 js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) -> js_typedarray_span_t<js_typedarray_element_any_t>;
