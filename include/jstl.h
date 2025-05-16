@@ -57,7 +57,7 @@ struct js_handle_t {
   }
 
   bool
-  empty() {
+  empty() const {
     return value_ == nullptr;
   }
 
