@@ -616,6 +616,64 @@ struct js_type_info_t<int64_t> {
 };
 
 template <>
+struct js_type_info_t<uint64_t> {
+  using type = uint64_t;
+
+  static constexpr auto signature = js_uint64;
+
+  static auto
+  marshall(uint64_t value, uint64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, uint64_t value, uint64_t &result) {
+    return marshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, uint64_t value, js_value_t *&result) {
+    return js_create_int64(env, value, &result);
+  }
+
+  static auto
+  unmarshall(uint64_t value, uint64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *, uint64_t value, uint64_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, uint64_t &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_number>(env, value, "int64");
+      if (err < 0) return err;
+    }
+
+    int64_t unmarshalled;
+    err = js_get_value_int64(env, value, &unmarshalled);
+    if (err < 0) return err;
+
+    result = unmarshalled;
+
+    return 0;
+  }
+};
+
+template <>
 struct js_type_info_t<double> {
   using type = double;
 

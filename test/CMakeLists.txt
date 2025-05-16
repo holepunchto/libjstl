@@ -29,6 +29,7 @@ list(APPEND tests
   create-function-return-uint16array-typedarray-span
   create-function-return-uint16array-typedarray-span-any
   create-function-return-uint32
+  create-function-return-uint64
   create-function-return-vector-int32
   create-function-return-void
   create-function-return-void-arg-array-int32
@@ -59,6 +60,7 @@ list(APPEND tests
   create-function-return-void-arg-uint16array-typedarray-span
   create-function-return-void-arg-uint16array-typedarray-span-any
   create-function-return-void-arg-uint32
+  create-function-return-void-arg-uint64
   create-function-return-void-arg-vector-int32
   create-object-with-properties
   create-reference-get-value
