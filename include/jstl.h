@@ -1554,6 +1554,190 @@ struct js_type_info_t<js_typedarray_span_t<>> {
   }
 };
 
+constexpr size_t js_typedarray_span_dynamic = -1;
+
+template <typename T, size_t N = js_typedarray_span_dynamic>
+struct js_typedarray_span_of_t;
+
+template <typename T>
+struct js_typedarray_span_of_t<T, 1> {
+  js_typedarray_span_of_t() : data_(nullptr) {}
+
+  js_typedarray_span_of_t(T *data) : data_(data) {}
+
+  T *
+  operator->() const {
+    return data_;
+  }
+
+  T &
+  operator*() {
+    return *data_;
+  }
+
+  const T &
+  operator*() const {
+    return *data_;
+  }
+
+private:
+  T *data_;
+};
+
+template <typename T>
+js_typedarray_span_of_t(T *data) -> js_typedarray_span_of_t<T, 1>;
+
+template <typename T>
+struct js_typedarray_span_of_t<T, js_typedarray_span_dynamic> {
+  js_typedarray_span_of_t() : data_(js_typedarray_span_nil<T>), size_(0) {}
+
+  js_typedarray_span_of_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
+
+  T &
+  operator[](size_t i) {
+    return data_[i];
+  }
+
+  const T
+  operator[](size_t i) const {
+    return data_[i];
+  }
+
+  T *
+  data() const {
+    return data_;
+  }
+
+  size_t
+  size() const {
+    return size_;
+  }
+
+  size_t
+  size_bytes() const {
+    return size_ * sizeof(T);
+  }
+
+  bool
+  empty() const {
+    return size_ == 0;
+  }
+
+  T *
+  begin() const {
+    return data_;
+  }
+
+  T *
+  end() const {
+    return data_ + size_;
+  }
+
+private:
+  T *data_;
+  size_t size_;
+};
+
+template <typename T>
+js_typedarray_span_of_t(T *data, size_t len) -> js_typedarray_span_of_t<T>;
+
+template <typename T>
+struct js_type_info_t<js_typedarray_span_of_t<T, 1>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const js_typedarray_span_of_t<T, 1> &view, js_value_t *&result) {
+    int err;
+
+    js_value_t *arraybuffer;
+    err = js_create_arraybuffer(env, sizeof(T), nullptr, &arraybuffer);
+    if (err < 0) return err;
+
+    T *data;
+    err = js_create_typedarray(env, js_uint8array, sizeof(T), arraybuffer, 0, &result);
+    if (err < 0) return err;
+
+    *data = *view;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_typedarray_span_of_t<T, 1> &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_typedarray<>>(env, value, "typedarray");
+      if (err < 0) return err;
+    }
+
+    T *data;
+    size_t len;
+    js_typedarray_type_t type;
+    err = js_get_typedarray_info(env, value, &type, &data, &len, nullptr, nullptr);
+    if (err < 0) return err;
+
+    len *= js_typedarray_element_size(type);
+
+    assert(len == sizeof(T));
+
+    result = js_typedarray_span_of_t<T, 1>(data);
+
+    return 0;
+  }
+};
+
+template <typename T>
+struct js_type_info_t<js_typedarray_span_of_t<T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const js_typedarray_span_of_t<T> &view, js_value_t *&result) {
+    int err;
+
+    T *data;
+    err = js_create_typedarray(env, view.size_bytes(), reinterpret_cast<void **>(&data), &result);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), data);
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_typedarray_span_of_t<T> &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_typedarray<>>(env, value, "typedarray");
+      if (err < 0) return err;
+    }
+
+    T *data;
+    size_t len;
+    js_typedarray_type_t type;
+    err = js_get_typedarray_info(env, value, &type, &data, &len, nullptr, nullptr);
+    if (err < 0) return err;
+
+    len *= js_typedarray_element_size(type);
+    if (err < 0) return err;
+
+    assert(len % sizeof(T) == 0);
+
+    result = js_typedarray_span_of_t<T>(data, len / sizeof(T));
+
+    return 0;
+  }
+};
+
 template <>
 struct js_type_info_t<js_receiver_t> {
   using type = js_value_t *;

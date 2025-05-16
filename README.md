@@ -241,6 +241,14 @@ The elements of a `TypedArray` in JavaScript that is a view of elements of type 
 
 The elements of a `TypedArray` in JavaScript that is a view of elements of any type.
 
+#### `js_typedarray_span_of_t<T>`
+
+The elements of a `TypedArray` in JavaScript interpreted as an array of elements of type `T`. Supports indexing operations such as `y = typedarray[x]`, `typedarray[x] = y`, and `p = &typedarray[x]`.
+
+#### `js_typedarray_span_of_t<T, 1>`
+
+The elements of a `TypedArray` in JavaScript interpreted as a single element of type `T`. Supports dereferencing operations such as `value->field` and `*value`.
+
 #### `T *`
 
 An `external` value in JavaScript that is a pointer to an element of type `T`.
