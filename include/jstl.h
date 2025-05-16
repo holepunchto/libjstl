@@ -229,7 +229,7 @@ struct js_persistent_t {
   }
 
   bool
-  empty() {
+  empty() const {
     return ref_ == nullptr;
   }
 
