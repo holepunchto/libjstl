@@ -48,6 +48,10 @@ struct js_handle_t {
 
   virtual ~js_handle_t() = default;
 
+  explicit operator bool() const {
+    return value_ != nullptr;
+  }
+
   explicit operator js_value_t *() const {
     return value_;
   }
