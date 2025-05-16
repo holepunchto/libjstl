@@ -2728,21 +2728,46 @@ struct js_argument_info_t<T, R...> {
   static constexpr bool has_receiver = js_is_same<T, js_receiver_t>;
 };
 
-struct js_function_call_t {};
+struct js_function_call_t {
+  enum type_t {
+    typed,
+    untyped
+  };
+
+  type_t type;
+};
 
 struct js_function_statistics_t {
   auto
   calls() {
-    return calls_;
+    return typed_calls_ + untyped_calls_;
   }
 
   auto
-  event(js_function_call_t) {
-    calls_++;
+  calls(js_function_call_t::type_t type) {
+    switch (type) {
+    case js_function_call_t::typed:
+      return typed_calls_;
+    case js_function_call_t::untyped:
+      return untyped_calls_;
+    }
+  }
+
+  auto
+  event(js_function_call_t call) {
+    switch (call.type) {
+    case js_function_call_t::typed:
+      typed_calls_++;
+      break;
+    case js_function_call_t::untyped:
+      untyped_calls_++;
+      break;
+    }
   }
 
 private:
-  uint64_t calls_ = 0;
+  uint64_t typed_calls_ = 0;
+  uint64_t untyped_calls_ = 0;
 };
 
 struct js_function_options_t : js_type_options_t {
@@ -2760,7 +2785,7 @@ struct js_typed_callback_t<fn> {
   static auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(args)...));
     };
@@ -2790,7 +2815,7 @@ private:
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2821,7 +2846,7 @@ private:
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2855,7 +2880,7 @@ private:
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2872,7 +2897,7 @@ struct js_typed_callback_t<fn> {
   static auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       fn(js_unmarshall_typed_value<A>(args)...);
     };
@@ -2898,7 +2923,7 @@ private:
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2925,7 +2950,7 @@ private:
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2958,7 +2983,7 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
@@ -3009,7 +3034,7 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
       js_escapable_handle_scope_t *scope;
       err = js_open_escapable_handle_scope(env, &scope);
@@ -3056,7 +3081,7 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
@@ -3103,7 +3128,7 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
@@ -3152,7 +3177,7 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
       js_handle_scope_t *scope;
       err = js_open_handle_scope(env, &scope);
@@ -3194,7 +3219,7 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
-      if constexpr (options.statistics) options.statistics->event(js_function_call_t{});
+      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
