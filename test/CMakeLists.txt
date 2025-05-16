@@ -54,6 +54,8 @@ list(APPEND tests
   create-function-return-void-arg-uint8array-span
   create-function-return-void-arg-uint8array-typedarray-span
   create-function-return-void-arg-uint8array-typedarray-span-any
+  create-function-return-void-arg-uint8array-typedarray-span-of-struct
+  create-function-return-void-arg-uint8array-typedarray-span-of-struct-dynamic
   create-function-return-void-arg-uint16array
   create-function-return-void-arg-uint16array-any
   create-function-return-void-arg-uint16array-span

@@ -1710,10 +1710,11 @@ struct js_type_info_t<js_typedarray_span_of_t<T, 1>> {
     int err;
 
     js_value_t *arraybuffer;
-    err = js_create_arraybuffer(env, sizeof(T), nullptr, &arraybuffer);
-    if (err < 0) return err;
 
     T *data;
+    err = js_create_arraybuffer(env, sizeof(T), reinterpret_cast<void **>(&data), &arraybuffer);
+    if (err < 0) return err;
+
     err = js_create_typedarray(env, js_uint8array, sizeof(T), arraybuffer, 0, &result);
     if (err < 0) return err;
 
@@ -1759,8 +1760,13 @@ struct js_type_info_t<js_typedarray_span_of_t<T>> {
   marshall(js_env_t *env, const js_typedarray_span_of_t<T> &view, js_value_t *&result) {
     int err;
 
+    js_value_t *arraybuffer;
+
     T *data;
-    err = js_create_typedarray(env, view.size_bytes(), reinterpret_cast<void **>(&data), &result);
+    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
+    if (err < 0) return err;
+
+    err = js_create_typedarray(env, js_uint8array, view.size_bytes(), arraybuffer, 0, &result);
     if (err < 0) return err;
 
     std::copy(view.begin(), view.end(), data);
