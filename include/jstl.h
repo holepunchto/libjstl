@@ -156,6 +156,10 @@ using js_int32array_t = js_typedarray_t<int32_t>;
 
 using js_uint32array_t = js_typedarray_t<uint32_t>;
 
+using js_bigint64array_t = js_typedarray_t<int64_t>;
+
+using js_biguint64array_t = js_typedarray_t<uint64_t>;
+
 using js_float32array_t = js_typedarray_t<float>;
 
 using js_float64array_t = js_typedarray_t<double>;
@@ -1495,6 +1499,10 @@ using js_uint16array_span_t = js_typedarray_span_t<uint16_t>;
 using js_int32array_span_t = js_typedarray_span_t<int32_t>;
 
 using js_uint32array_span_t = js_typedarray_span_t<uint32_t>;
+
+using js_bigint64array_span_t = js_typedarray_span_t<int64_t>;
+
+using js_biguint64array_span_t = js_typedarray_span_t<uint64_t>;
 
 using js_float32array_span_t = js_typedarray_span_t<float>;
 
