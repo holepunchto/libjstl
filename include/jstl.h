@@ -2728,8 +2728,19 @@ struct js_argument_info_t<T, R...> {
   static constexpr bool has_receiver = js_is_same<T, js_receiver_t>;
 };
 
+struct js_function_statistics_t {
+  uint64_t calls = 0;
+
+  auto
+  call() {
+    calls++;
+  }
+};
+
 struct js_function_options_t : js_type_options_t {
   bool scoped = true;
+
+  js_function_statistics_t *statistics = nullptr;
 };
 
 template <auto fn>
@@ -2741,6 +2752,8 @@ struct js_typed_callback_t<fn> {
   static auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
+      if constexpr (options.statistics) options.statistics->call();
+
       return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(args)...));
     };
   }
@@ -2768,6 +2781,8 @@ private:
   create_with_scope() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2797,6 +2812,8 @@ private:
   create_with_escapable_scope() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2830,6 +2847,8 @@ private:
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       int err;
 
+      if constexpr (options.statistics) options.statistics->call();
+
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
       assert(err == 0);
@@ -2845,6 +2864,8 @@ struct js_typed_callback_t<fn> {
   static auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
+      if constexpr (options.statistics) options.statistics->call();
+
       fn(js_unmarshall_typed_value<A>(args)...);
     };
   }
@@ -2868,6 +2889,8 @@ private:
   create_with_scope() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2893,6 +2916,8 @@ private:
   create_without_scope() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> void {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       js_env_t *env;
       err = js_get_typed_callback_info(info, &env, nullptr);
@@ -2924,6 +2949,8 @@ private:
   create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
@@ -2974,6 +3001,8 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
+      if constexpr (options.statistics) options.statistics->call();
+
       js_escapable_handle_scope_t *scope;
       err = js_open_escapable_handle_scope(env, &scope);
       assert(err == 0);
@@ -3019,6 +3048,8 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
+      if constexpr (options.statistics) options.statistics->call();
+
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
 
@@ -3063,6 +3094,8 @@ private:
   create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
@@ -3111,6 +3144,8 @@ private:
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
 
+      if constexpr (options.statistics) options.statistics->call();
+
       js_handle_scope_t *scope;
       err = js_open_handle_scope(env, &scope);
       assert(err == 0);
@@ -3150,6 +3185,8 @@ private:
   create_without_scope(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) -> js_value_t * {
       int err;
+
+      if constexpr (options.statistics) options.statistics->call();
 
       size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];

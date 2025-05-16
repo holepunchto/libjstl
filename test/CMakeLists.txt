@@ -64,6 +64,7 @@ list(APPEND tests
   create-function-return-void-arg-uint32
   create-function-return-void-arg-uint64
   create-function-return-void-arg-vector-int32
+  create-function-with-statistics
   create-object-with-properties
   create-reference-get-value
   create-reference-get-value-optional
