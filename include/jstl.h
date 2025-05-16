@@ -2754,12 +2754,12 @@ struct js_function_call_t {
 };
 
 struct js_function_statistics_t {
-  auto
+  uint64_t
   calls() const {
     return typed_calls_ + untyped_calls_;
   }
 
-  auto
+  uint64_t
   calls(js_function_call_t::type_t type) const {
     switch (type) {
     case js_function_call_t::typed:
@@ -2769,12 +2769,12 @@ struct js_function_statistics_t {
     }
   }
 
-  auto
+  bool
   optimized() const {
     return typed_calls_ > 0;
   }
 
-  auto
+  void
   event(js_function_call_t call) {
     switch (call.type) {
     case js_function_call_t::typed:
