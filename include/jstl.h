@@ -2751,18 +2751,23 @@ struct js_function_call_t {
 
 struct js_function_statistics_t {
   auto
-  calls() {
+  calls() const {
     return typed_calls_ + untyped_calls_;
   }
 
   auto
-  calls(js_function_call_t::type_t type) {
+  calls(js_function_call_t::type_t type) const {
     switch (type) {
     case js_function_call_t::typed:
       return typed_calls_;
     case js_function_call_t::untyped:
       return untyped_calls_;
     }
+  }
+
+  auto
+  optimized() const {
+    return typed_calls_ > 0;
   }
 
   auto
