@@ -217,6 +217,10 @@ struct js_persistent_t {
   void
   operator=(const js_persistent_t &) = delete;
 
+  explicit operator bool() const {
+    return ref_ != nullptr;
+  }
+
   explicit operator js_ref_t *() const {
     return ref_;
   }
