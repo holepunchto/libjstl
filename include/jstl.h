@@ -2643,7 +2643,7 @@ js_marshall_typed_value(T value) {
   return result;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_marshall_typed_value(js_env_t *env, T value) {
   int err;
@@ -2655,7 +2655,7 @@ js_marshall_typed_value(js_env_t *env, T value) {
   return result;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_marshall_untyped_value(js_env_t *env, T value) {
   int err;
@@ -2667,7 +2667,7 @@ js_marshall_untyped_value(js_env_t *env, T value) {
   return result;
 }
 
-template <js_type_options_t options = js_type_options_t()>
+template <js_type_options_t options = js_type_options_t{}>
 static inline auto
 js_marshall_untyped_value(js_env_t *env) {
   int err;
@@ -2691,7 +2691,7 @@ js_unmarshall_typed_value(typename js_type_info_t<T>::type value) {
   return result;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value) {
   int err;
@@ -2703,7 +2703,7 @@ js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value)
   return result;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
   int err;
@@ -3224,13 +3224,13 @@ private:
   }
 };
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_typed_callback() {
   return js_typed_callback_t<fn>::template create<options>();
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_untyped_callback() {
   return js_untyped_callback_t<fn>::template create<options>();
@@ -3362,43 +3362,43 @@ js_create_finalizer() {
   return js_finalizer_info_t<fn, T, U>::create();
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, const char *name, size_t len, typename js_function_info_t<fn>::type &result) {
   return js_function_info_t<fn>::template marshall<options>(env, name, len, result);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, const std::string &name, typename js_function_info_t<fn>::type &result) {
   return js_function_info_t<fn>::template marshall<options>(env, name.data(), name.size(), result);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, typename js_function_info_t<fn>::type &result) {
   return js_function_info_t<fn>::template marshall<options>(env, nullptr, 0, result);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, const char *name, size_t len, js_handle_t &result) {
   return js_function_info_t<fn>::template marshall<options>(env, name, len, result);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, std::string name, js_handle_t &result) {
   return js_function_info_t<fn>::template marshall<options>(env, name.data(), name.length(), result);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, js_handle_t &result) {
   return js_function_info_t<fn>::template marshall<options>(env, nullptr, 0, result);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... A>
+template <js_type_options_t options = js_type_options_t{}, typename... A>
 static inline auto
 js_call_function(js_env_t *env, const js_function_t<void, A...> &function, const A &...args) {
   int err;
@@ -3428,7 +3428,7 @@ js_call_function(js_env_t *env, const js_function_t<void, A...> &function, const
   }
 }
 
-template <js_type_options_t options = js_type_options_t(), typename R, typename... A>
+template <js_type_options_t options = js_type_options_t{}, typename R, typename... A>
 static inline auto
 js_call_function(js_env_t *env, const js_function_t<R, A...> &function, const A &...args, R &result) {
   int err;
@@ -3464,7 +3464,7 @@ js_call_function(js_env_t *env, const js_function_t<R, A...> &function, const A 
   }
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... A>
+template <js_type_options_t options = js_type_options_t{}, typename... A>
 static inline auto
 js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> &function, const A &...args) {
   int err;
@@ -3494,7 +3494,7 @@ js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> 
   }
 }
 
-template <js_type_options_t options = js_type_options_t(), typename R, typename... A>
+template <js_type_options_t options = js_type_options_t{}, typename R, typename... A>
 static inline auto
 js_call_function_with_checkpoint(js_env_t *env, const js_function_t<R, A...> &function, const A &...args, R &result) {
   int err;
@@ -4104,7 +4104,7 @@ js_get_property(js_env_t *env, const js_object_t &object, const char *name, js_h
   return js_get_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t **>(result));
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_get_property(js_env_t *env, const js_object_t &object, const js_name_t &name, T &result) {
   int err;
@@ -4116,7 +4116,7 @@ js_get_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
   return js_type_info_t<T>::template unmarshall<options>(env, value, result);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_get_property(js_env_t *env, js_value_t *object, const js_name_t &name, T &result) {
   int err;
@@ -4128,7 +4128,7 @@ js_get_property(js_env_t *env, js_value_t *object, const js_name_t &name, T &res
   return js_get_property<options>(env, unmarshalled, name, result);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_get_property(js_env_t *env, const js_object_t &object, const char *name, T &result) {
   int err;
@@ -4140,7 +4140,7 @@ js_get_property(js_env_t *env, const js_object_t &object, const char *name, T &r
   return js_type_info_t<T>::template unmarshall<options>(env, value, result);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_get_property(js_env_t *env, js_value_t *object, const char *name, T &result) {
   int err;
@@ -4162,7 +4162,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, cons
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t *>(value));
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name, const T &value) {
   int err;
@@ -4174,7 +4174,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
   return js_set_property(env, static_cast<js_value_t *>(object), static_cast<js_value_t *>(name), marshalled);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name, const T &value) {
   int err;
@@ -4186,7 +4186,7 @@ js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name, const 
   return js_set_property<options>(env, unmarshalled, name, value);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const char *name, const T &value) {
   int err;
@@ -4198,7 +4198,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, cons
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, marshalled);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_property(js_env_t *env, js_value_t *object, const char *name, const T &value) {
   int err;
@@ -4210,7 +4210,7 @@ js_set_property(js_env_t *env, js_value_t *object, const char *name, const T &va
   return js_set_property<options>(env, unmarshalled, name, value);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name) {
   int err;
@@ -4222,7 +4222,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name)
   return js_set_property(env, object, name, value);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name) {
   int err;
@@ -4234,7 +4234,7 @@ js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name) {
   return js_set_property<fn, options>(env, unmarshalled, name);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
   int err;
@@ -4246,7 +4246,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t *>(value));
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_set_property(js_env_t *env, js_value_t *object, const char *name) {
   int err;
@@ -4263,7 +4263,7 @@ js_get_element(js_env_t *env, const js_object_t &object, uint32_t index, js_hand
   return js_get_element(env, static_cast<js_value_t *>(object), index, static_cast<js_value_t **>(result));
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_get_element(js_env_t *env, const js_object_t &object, uint32_t index, T &result) {
   int err;
@@ -4280,7 +4280,7 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index, const j
   return js_set_element(env, static_cast<js_value_t *>(object), index, static_cast<js_value_t *>(value));
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_element(js_env_t *env, const js_object_t &object, uint32_t index, const T &value) {
   int err;
@@ -4292,7 +4292,7 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index, const T
   return js_set_element(env, static_cast<js_value_t *>(object), index, marshalled);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_element(js_env_t *env, js_value_t *object, uint32_t index, const T &value) {
   int err;
@@ -4304,7 +4304,7 @@ js_set_element(js_env_t *env, js_value_t *object, uint32_t index, const T &value
   return js_set_element<options>(env, unmarshalled, index, value);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_set_element(js_env_t *env, const js_object_t &object, uint32_t index) {
   int err;
@@ -4316,7 +4316,7 @@ js_set_element(js_env_t *env, const js_object_t &object, uint32_t index) {
   return js_set_element(env, object, index, value);
 }
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_set_element(js_env_t *env, js_value_t *object, uint32_t index) {
   int err;
@@ -4328,7 +4328,7 @@ js_set_element(js_env_t *env, js_value_t *object, uint32_t index) {
   return js_set_element<fn, options>(env, unmarshalled, index);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
+template <js_type_options_t options = js_type_options_t{}, typename T, size_t N>
 static inline auto
 js_get_array_elements(js_env_t *env, const js_array_t &array, T result[N]) {
   int err;
@@ -4348,7 +4348,7 @@ js_get_array_elements(js_env_t *env, const js_array_t &array, T result[N]) {
   return 0;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
+template <js_type_options_t options = js_type_options_t{}, typename T, size_t N>
 static inline auto
 js_get_array_elements(js_env_t *env, const js_array_t &array, std::array<T, N> &result) {
   int err;
@@ -4368,7 +4368,7 @@ js_get_array_elements(js_env_t *env, const js_array_t &array, std::array<T, N> &
   return 0;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_get_array_elements(js_env_t *env, const js_array_t &array, std::vector<T> &result) {
   int err;
@@ -4391,7 +4391,7 @@ js_get_array_elements(js_env_t *env, const js_array_t &array, std::vector<T> &re
   return 0;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... T, size_t... I>
+template <js_type_options_t options = js_type_options_t{}, typename... T, size_t... I>
 static inline auto
 js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &result, std::index_sequence<I...>) {
   int err;
@@ -4414,13 +4414,13 @@ js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &
   }
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... T>
+template <js_type_options_t options = js_type_options_t{}, typename... T>
 static inline auto
 js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &result) {
   return js_get_array_elements<options>(env, array, result, std::index_sequence_for<T...>());
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
+template <js_type_options_t options = js_type_options_t{}, typename T, size_t N>
 static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, const T values[N], size_t offset = 0) {
   int err;
@@ -4435,7 +4435,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const T values[N],
   return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled), N, offset);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
+template <js_type_options_t options = js_type_options_t{}, typename T, size_t N>
 static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, const std::array<T, N> &values, size_t offset = 0) {
   int err;
@@ -4450,7 +4450,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::array<T
   return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled), N, offset);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<T> &values, size_t offset = 0) {
   int err;
@@ -4467,7 +4467,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<
   return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled.data()), len, offset);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... T, size_t... I>
+template <js_type_options_t options = js_type_options_t{}, typename... T, size_t... I>
 static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T...> &values, size_t offset, std::index_sequence<I...>) {
   try {
@@ -4481,13 +4481,13 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T
   }
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... T>
+template <js_type_options_t options = js_type_options_t{}, typename... T>
 static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T...> &values, size_t offset = 0) {
   return js_set_array_elements<options>(env, array, values, offset, std::index_sequence_for<T...>());
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, js_property_descriptor_t &result) {
   int err;
@@ -4514,7 +4514,7 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, j
   return 0;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
+template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
 js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property) {
   int err;
@@ -4526,7 +4526,7 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property) {
   return descriptor;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename... T>
+template <js_type_options_t options = js_type_options_t{}, typename... T>
 static inline auto
 js_define_properties(js_env_t *env, const js_object_t &object, const js_property_t<T>... properties) {
   try {
