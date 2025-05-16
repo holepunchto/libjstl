@@ -33,11 +33,11 @@ main() {
 
   e = js_call_function(env, fn);
   assert(e == 0);
-  assert(stats.calls == 1);
+  assert(stats.calls() == 1);
 
   e = js_call_function(env, fn);
   assert(e == 0);
-  assert(stats.calls == 2);
+  assert(stats.calls() == 2);
 
   e = js_close_handle_scope(env, scope);
   assert(e == 0);
