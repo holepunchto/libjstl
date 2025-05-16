@@ -1735,7 +1735,7 @@ struct js_type_info_t<js_typedarray_span_of_t<T, 1>> {
     T *data;
     size_t len;
     js_typedarray_type_t type;
-    err = js_get_typedarray_info(env, value, &type, &data, &len, nullptr, nullptr);
+    err = js_get_typedarray_info(env, value, &type, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
     if (err < 0) return err;
 
     len *= js_typedarray_element_size(type);
@@ -1781,7 +1781,7 @@ struct js_type_info_t<js_typedarray_span_of_t<T>> {
     T *data;
     size_t len;
     js_typedarray_type_t type;
-    err = js_get_typedarray_info(env, value, &type, &data, &len, nullptr, nullptr);
+    err = js_get_typedarray_info(env, value, &type, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
     if (err < 0) return err;
 
     len *= js_typedarray_element_size(type);
