@@ -56,6 +56,11 @@ struct js_handle_t {
     return &value_;
   }
 
+  auto
+  empty() {
+    return value_ == nullptr;
+  }
+
 private:
   js_value_t *value_;
 };
