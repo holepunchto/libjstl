@@ -4634,8 +4634,6 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, T &re
   err = js_get_reference_value(env, static_cast<js_ref_t *>(reference), &value);
   if (err < 0) return err;
 
-  assert(value != nullptr);
-
   result = T(value);
 
   return 0;
