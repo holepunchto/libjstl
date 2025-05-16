@@ -144,6 +144,22 @@ struct js_typedarray_t : js_object_t {
   explicit js_typedarray_t(js_value_t *value) : js_object_t(value) {}
 };
 
+using js_int8array_t = js_typedarray_t<int8_t>;
+
+using js_uint8array_t = js_typedarray_t<uint8_t>;
+
+using js_int16array_t = js_typedarray_t<int16_t>;
+
+using js_uint16array_t = js_typedarray_t<uint16_t>;
+
+using js_int32array_t = js_typedarray_t<int32_t>;
+
+using js_uint32array_t = js_typedarray_t<uint32_t>;
+
+using js_float32array_t = js_typedarray_t<float>;
+
+using js_float64array_t = js_typedarray_t<double>;
+
 struct js_receiver_t : js_handle_t {
   js_receiver_t() : js_handle_t() {}
 
@@ -1467,6 +1483,22 @@ private:
 
 template <js_typedarray_element_t T>
 js_typedarray_span_t(T *data, size_t len) -> js_typedarray_span_t<T>;
+
+using js_int8array_span_t = js_typedarray_span_t<int8_t>;
+
+using js_uint8array_span_t = js_typedarray_span_t<uint8_t>;
+
+using js_int16array_span_t = js_typedarray_span_t<int16_t>;
+
+using js_uint16array_span_t = js_typedarray_span_t<uint16_t>;
+
+using js_int32array_span_t = js_typedarray_span_t<int32_t>;
+
+using js_uint32array_span_t = js_typedarray_span_t<uint32_t>;
+
+using js_float32array_span_t = js_typedarray_span_t<float>;
+
+using js_float64array_span_t = js_typedarray_span_t<double>;
 
 template <>
 struct js_typedarray_span_t<js_typedarray_element_any_t> {
