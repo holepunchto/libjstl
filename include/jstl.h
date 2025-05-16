@@ -4645,20 +4645,6 @@ js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, T &re
 
 template <typename T>
 static inline auto
-js_get_reference_value(js_env_t *env, const js_persistent_t<T> &reference, std::optional<T> &result) {
-  int err;
-
-  js_value_t *value;
-  err = js_get_reference_value(env, static_cast<js_ref_t *>(reference), &value);
-  if (err < 0) return err;
-
-  result = value == nullptr ? std::nullopt : std::optional(T(value));
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
 js_wrap(js_env_t *env, const js_object_t &object, T *data) {
   return js_wrap(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), nullptr, nullptr, nullptr);
 }
