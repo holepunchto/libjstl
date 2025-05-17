@@ -1183,6 +1183,10 @@ struct js_arraybuffer_span_of_t<T, 1> {
 
   js_arraybuffer_span_of_t(T *data) : data_(data) {}
 
+  operator T *() const {
+    return data_;
+  }
+
   T *
   operator->() const {
     return data_;
@@ -1669,6 +1673,10 @@ struct js_typedarray_span_of_t<T, 1> {
   js_typedarray_span_of_t() : data_(nullptr) {}
 
   js_typedarray_span_of_t(T *data) : data_(data) {}
+
+  operator T *() const {
+    return data_;
+  }
 
   T *
   operator->() const {
