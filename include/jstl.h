@@ -8,6 +8,7 @@
 #include <vector>
 
 #include <js.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <utf.h>
@@ -490,6 +491,44 @@ struct js_type_info_t<bool> {
   }
 };
 
+constexpr int64_t js_min_safe_integer = -9007199254740991;
+
+constexpr int64_t js_max_safe_integer = 9007199254740991;
+
+static auto
+js_is_int64(js_env_t *env, const js_handle_t &value, bool &result) {
+  int err;
+  err = js_is_number(env, static_cast<js_value_t *>(value), &result);
+  if (err < 0) return err;
+
+  if (result == false) return 0;
+
+  double n, i;
+  err = js_get_value_double(env, static_cast<js_value_t *>(value), &n);
+  if (err < 0) return err;
+
+  result = modf(n, &i) == 0.0 && i >= INT64_MIN && i <= INT64_MAX;
+
+  return 0;
+}
+
+static auto
+js_is_uint64(js_env_t *env, const js_handle_t &value, bool &result) {
+  int err;
+  err = js_is_number(env, static_cast<js_value_t *>(value), &result);
+  if (err < 0) return err;
+
+  if (result == false) return 0;
+
+  double n, i;
+  err = js_get_value_double(env, static_cast<js_value_t *>(value), &n);
+  if (err < 0) return err;
+
+  result = modf(n, &i) == 0.0 && i >= 0.0 && i <= UINT64_MAX;
+
+  return 0;
+}
+
 template <>
 struct js_type_info_t<int32_t> {
   using type = int32_t;
@@ -614,6 +653,18 @@ struct js_type_info_t<int64_t> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, int64_t value, js_value_t *&result) {
+    if (options.checked) {
+      int err;
+
+      if (value < js_min_safe_integer) {
+        err = js_throw_range_errorf(env, nullptr, "Value '%lld' is less than Number.MIN_SAFE_INTEGER", value);
+        assert(err == 0);
+      } else if (value > js_max_safe_integer) {
+        err = js_throw_range_errorf(env, nullptr, "Value '%lld' is greater than Number.MAX_SAFE_INTEGER", value);
+        assert(err == 0);
+      }
+    }
+
     return js_create_int64(env, value, &result);
   }
 
@@ -635,7 +686,7 @@ struct js_type_info_t<int64_t> {
   unmarshall(js_env_t *env, js_value_t *value, int64_t &result) {
     if constexpr (options.checked) {
       int err;
-      err = js_check_value<js_is_number>(env, value, "int64");
+      err = js_check_value<js_is_int64>(env, value, "int64");
       if (err < 0) return err;
     }
 
@@ -665,6 +716,15 @@ struct js_type_info_t<uint64_t> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, uint64_t value, js_value_t *&result) {
+    if (options.checked) {
+      int err;
+
+      if (value > js_max_safe_integer) {
+        err = js_throw_range_errorf(env, nullptr, "Value '%llu' is greater than Number.MAX_SAFE_INTEGER", value);
+        assert(err == 0);
+      }
+    }
+
     return js_create_int64(env, value, &result);
   }
 
@@ -687,7 +747,7 @@ struct js_type_info_t<uint64_t> {
     int err;
 
     if constexpr (options.checked) {
-      err = js_check_value<js_is_number>(env, value, "int64");
+      err = js_check_value<js_is_uint64>(env, value, "uint64");
       if (err < 0) return err;
     }
 
