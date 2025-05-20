@@ -3521,7 +3521,7 @@ js_call_function(js_env_t *env, const js_function_t<void, A...> &function, const
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
@@ -3551,7 +3551,7 @@ js_call_function(js_env_t *env, const js_function_t<R, A...> &function, const A 
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
@@ -3587,7 +3587,7 @@ js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> 
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
@@ -3617,7 +3617,7 @@ js_call_function_with_checkpoint(js_env_t *env, const js_function_t<R, A...> &fu
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
