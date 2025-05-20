@@ -3521,7 +3521,7 @@ js_call_function(js_env_t *env, const js_function_t<void, A...> &function, const
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
@@ -3551,7 +3551,7 @@ js_call_function(js_env_t *env, const js_function_t<R, A...> &function, const A 
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
@@ -3587,7 +3587,7 @@ js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> 
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
@@ -3610,14 +3610,14 @@ js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> 
 
 template <js_type_options_t options = js_type_options_t{}, typename R, typename... A>
 static inline auto
-js_call_function_with_checkpoint(js_env_t *env, const js_function_t<R, A...> &function, const A &...args, R &result) {
+js_call_function_with_checkpoint(js_env_t *env, const js_function_t<R, A...> &function, R &result, const A &...args) {
   int err;
 
   size_t argc = sizeof...(A);
 
   try {
     js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, args...)...
+      js_marshall_untyped_value<options, A>(env, args)...
     };
 
     js_value_t *receiver;
