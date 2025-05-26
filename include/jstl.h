@@ -2250,7 +2250,7 @@ struct js_type_info_t<char[N]> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const char value[N], js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), strlen(value), &result);
   }
 
   template <js_type_options_t options>
@@ -2267,7 +2267,7 @@ struct js_type_info_t<char[N]> {
     err = js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result), N, &len);
     if (err < 0) return err;
 
-    assert(len == N);
+    assert(len == N - 1 /* NULL */);
 
     return 0;
   }
@@ -2282,7 +2282,7 @@ struct js_type_info_t<const char[N]> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const char value[N], js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N - 1 /* NULL */, &result);
   }
 };
 
