@@ -2358,9 +2358,10 @@ struct js_type_info_t<std::string> {
     err = js_get_value_string_utf8(env, value, nullptr, 0, &len);
     if (err < 0) return err;
 
+    result.reserve(len + 1 /* NULL */);
     result.resize(len);
 
-    return js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result.data()), result.length(), nullptr);
+    return js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result.data()), result.capacity(), nullptr);
   }
 };
 
@@ -4193,9 +4194,10 @@ js_get_value_string(js_env_t *env, const js_string_t &string, std::string &resul
   err = js_get_value_string_utf8(env, static_cast<js_value_t *>(string), nullptr, 0, &len);
   if (err < 0) return err;
 
+  result.reserve(len + 1 /* NULL */);
   result.resize(len);
 
-  return js_get_value_string_utf8(env, static_cast<js_value_t *>(string), reinterpret_cast<utf8_t *>(result.data()), result.length(), nullptr);
+  return js_get_value_string_utf8(env, static_cast<js_value_t *>(string), reinterpret_cast<utf8_t *>(result.data()), result.capacity(), nullptr);
 }
 
 static inline auto
