@@ -7,7 +7,8 @@
 
 void
 on_call(js_env_t *env, int32_t n, bool b) {
-  assert(n == true);
+  assert(n == 42);
+  assert(b == true);
 }
 
 int
