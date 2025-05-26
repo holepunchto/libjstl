@@ -2267,7 +2267,7 @@ struct js_type_info_t<char[N]> {
     err = js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result), N, &len);
     if (err < 0) return err;
 
-    assert(len == N - 1 /* NULL */);
+    assert(len < N);
 
     return 0;
   }
