@@ -2250,7 +2250,7 @@ struct js_type_info_t<char[N]> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const char value[N], js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), strlen(value), &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
   }
 
   template <js_type_options_t options>
