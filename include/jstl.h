@@ -4218,7 +4218,7 @@ js_get_property(js_env_t *env, const js_object_t &object, const char *name, js_h
 }
 
 static inline auto
-js_get_property(js_env_t *env, const js_object_t &object, const std::string name, js_handle_t &result) {
+js_get_property(js_env_t *env, const js_object_t &object, const std::string &name, js_handle_t &result) {
   return js_get_named_property(env, static_cast<js_value_t *>(object), name.c_str(), static_cast<js_value_t **>(result));
 }
 
@@ -4248,7 +4248,7 @@ js_get_property(js_env_t *env, const js_object_t &object, const char *name, T &r
 
 template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
-js_get_property(js_env_t *env, const js_object_t &object, const std::string name, T &result) {
+js_get_property(js_env_t *env, const js_object_t &object, const std::string &name, T &result) {
   return js_get_property<options>(env, object, name.c_str(), result);
 }
 
@@ -4278,7 +4278,7 @@ js_get_property(js_env_t *env, js_value_t *object, const char *name, T &result) 
 
 template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
-js_get_property(js_env_t *env, js_value_t *object, const std::string name, T &result) {
+js_get_property(js_env_t *env, js_value_t *object, const std::string &name, T &result) {
   return js_get_property<options>(env, object, name.c_str(), result);
 }
 
@@ -4293,7 +4293,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, cons
 }
 
 static inline auto
-js_set_property(js_env_t *env, const js_object_t &object, const std::string name, const js_handle_t &value) {
+js_set_property(js_env_t *env, const js_object_t &object, const std::string &name, const js_handle_t &value) {
   return js_set_named_property(env, static_cast<js_value_t *>(object), name.c_str(), static_cast<js_value_t *>(value));
 }
 
@@ -4323,7 +4323,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, cons
 
 template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
-js_set_property(js_env_t *env, const js_object_t &object, const std::string name, const T &value) {
+js_set_property(js_env_t *env, const js_object_t &object, const std::string &name, const T &value) {
   return js_set_property<options>(env, object, name.c_str(), value);
 }
 
@@ -4353,7 +4353,7 @@ js_set_property(js_env_t *env, js_value_t *object, const char *name, const T &va
 
 template <js_type_options_t options = js_type_options_t{}, typename T>
 static inline auto
-js_set_property(js_env_t *env, js_value_t *object, const std::string name, const T &value) {
+js_set_property(js_env_t *env, js_value_t *object, const std::string &name, const T &value) {
   return js_set_property<options>(env, object, name.c_str(), value);
 }
 
@@ -4383,7 +4383,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
 
 template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
-js_set_property(js_env_t *env, const js_object_t &object, const std::string name) {
+js_set_property(js_env_t *env, const js_object_t &object, const std::string &name) {
   return js_set_property<fn, options>(env, object, name.c_str());
 }
 
@@ -4413,7 +4413,7 @@ js_set_property(js_env_t *env, js_value_t *object, const char *name) {
 
 template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
-js_set_property(js_env_t *env, js_value_t *object, const std::string name) {
+js_set_property(js_env_t *env, js_value_t *object, const std::string &name) {
   return js_set_property<fn, options>(env, object, name.c_str());
 }
 
