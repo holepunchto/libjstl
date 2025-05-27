@@ -2877,7 +2877,11 @@ struct js_typed_callback_t<fn> {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) -> typename js_type_info_t<R>::type {
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(args)...));
+      try {
+        return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(args)...));
+      } catch (...) {
+        return R();
+      }
     };
   }
 };
@@ -2919,8 +2923,7 @@ private:
 
       try {
         result = js_marshall_typed_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...));
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
 
       err = js_close_handle_scope(env, scope);
@@ -2953,8 +2956,7 @@ private:
 
         err = js_escape_handle(env, scope, result, &result);
         assert(err == 0);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
 
       err = js_close_escapable_handle_scope(env, scope);
@@ -3025,8 +3027,7 @@ private:
 
       try {
         fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
 
       err = js_close_handle_scope(env, scope);
@@ -3048,8 +3049,7 @@ private:
 
       try {
         fn(env, js_unmarshall_typed_value<static_cast<js_type_options_t>(options), A>(env, args)...);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
     };
   }
@@ -3096,8 +3096,8 @@ private:
 
       try {
         result = js_marshall_untyped_value<static_cast<js_type_options_t>(options), R>(env, fn(js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...));
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
+        result = nullptr;
       }
 
       return result;
@@ -3154,8 +3154,8 @@ private:
 
         err = js_escape_handle(env, scope, result, &result);
         assert(err == 0);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
+        result = nullptr;
       }
 
       err = js_close_escapable_handle_scope(env, scope);
@@ -3194,8 +3194,8 @@ private:
 
       try {
         result = js_marshall_untyped_value<static_cast<js_type_options_t>(options), R>(env, fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...));
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
+        result = nullptr;
       }
 
       return result;
@@ -3239,8 +3239,7 @@ private:
 
       try {
         fn(js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
 
       return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
@@ -3292,8 +3291,7 @@ private:
 
       try {
         fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
 
       err = js_close_handle_scope(env, scope);
@@ -3330,8 +3328,7 @@ private:
 
       try {
         fn(env, js_unmarshall_untyped_value<static_cast<js_type_options_t>(options), A>(env, argv[I])...);
-      } catch (int err) {
-        assert(err != 0);
+      } catch (...) {
       }
 
       return js_marshall_untyped_value<static_cast<js_type_options_t>(options)>(env);
