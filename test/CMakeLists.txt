@@ -91,6 +91,7 @@ foreach(test IN LISTS tests)
     PROPERTIES
     C_STANDARD 11
     CXX_STANDARD 20
+    CXX_SCAN_FOR_MODULES OFF
   )
 
   target_link_libraries(
