@@ -4833,3 +4833,93 @@ static inline auto
 js_add_finalizer(js_env_t *env, const js_object_t &object, T *data, U *finalize_hint) {
   return js_add_finalizer(env, static_cast<js_value_t *>(object), reinterpret_cast<void *>(data), js_create_finalizer<finalize, T, U>(), reinterpret_cast<void *>(finalize_hint), nullptr);
 }
+
+static inline auto
+js_create_error(js_env_t *env, const js_string_t &message, js_handle_t &result) {
+  return js_create_error(env, nullptr, static_cast<js_value_t *>(message), static_cast<js_value_t **>(result));
+}
+
+static inline auto
+js_create_error(js_env_t *env, const js_handle_t &code, const js_string_t &message, js_handle_t &result) {
+  return js_create_error(env, static_cast<js_value_t *>(code), static_cast<js_value_t *>(message), static_cast<js_value_t **>(result));
+}
+
+template <js_type_options_t options = js_type_options_t{}, typename T>
+static inline auto
+js_create_error(js_env_t *env, const T &code, const js_string_t &message, js_handle_t &result) {
+  int err;
+
+  js_value_t *marshalled;
+  err = js_type_info_t<T>::template marshall<options>(env, code, marshalled);
+  if (err < 0) return err;
+
+  return js_create_error(env, marshalled, static_cast<js_value_t *>(message), static_cast<js_value_t **>(result));
+}
+
+static inline auto
+js_create_error(js_env_t *env, const char *message, js_handle_t &result) {
+  int err;
+
+  js_string_t string;
+  err = js_create_string(env, message, string);
+  if (err < 0) return err;
+
+  return js_create_error(env, string, result);
+}
+
+static inline auto
+js_create_error(js_env_t *env, const js_handle_t &code, const char *message, js_handle_t &result) {
+  int err;
+
+  js_string_t string;
+  err = js_create_string(env, message, string);
+  if (err < 0) return err;
+
+  return js_create_error(env, code, string, result);
+}
+
+template <js_type_options_t options = js_type_options_t{}, typename T>
+static inline auto
+js_create_error(js_env_t *env, const T &code, const char *message, js_handle_t &result) {
+  int err;
+
+  js_string_t string;
+  err = js_create_string(env, message, string);
+  if (err < 0) return err;
+
+  return js_create_error<options>(env, code, string, result);
+}
+
+static inline auto
+js_create_error(js_env_t *env, const std::string &message, js_handle_t &result) {
+  int err;
+
+  js_string_t string;
+  err = js_create_string(env, message, string);
+  if (err < 0) return err;
+
+  return js_create_error(env, string, result);
+}
+
+static inline auto
+js_create_error(js_env_t *env, const js_handle_t &code, const std::string &message, js_handle_t &result) {
+  int err;
+
+  js_string_t string;
+  err = js_create_string(env, message, string);
+  if (err < 0) return err;
+
+  return js_create_error(env, code, string, result);
+}
+
+template <js_type_options_t options = js_type_options_t{}, typename T>
+static inline auto
+js_create_error(js_env_t *env, const T &code, const std::string &message, js_handle_t &result) {
+  int err;
+
+  js_string_t string;
+  err = js_create_string(env, message, string);
+  if (err < 0) return err;
+
+  return js_create_error<options>(env, code, string, result);
+}
