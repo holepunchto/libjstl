@@ -4,6 +4,8 @@
 
 #include "../include/jstl.h"
 
+js_function_statistics_t on_call_stats;
+
 void
 on_call(js_env_t *) {}
 
@@ -25,19 +27,17 @@ main() {
   e = js_open_handle_scope(env, &scope);
   assert(e == 0);
 
-  static js_function_statistics_t stats;
-
   js_function_t<void> fn;
-  e = js_create_function<on_call, {.statistics = &stats}>(env, fn);
+  e = js_create_function<on_call, {.statistics = &on_call_stats}>(env, fn);
   assert(e == 0);
 
   e = js_call_function(env, fn);
   assert(e == 0);
-  assert(stats.calls() == 1);
+  assert(on_call_stats.calls() == 1);
 
   e = js_call_function(env, fn);
   assert(e == 0);
-  assert(stats.calls() == 2);
+  assert(on_call_stats.calls() == 2);
 
   e = js_close_handle_scope(env, scope);
   assert(e == 0);
