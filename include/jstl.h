@@ -769,6 +769,264 @@ struct js_type_info_t<uint64_t> {
   }
 };
 
+#if INTPTR_MAX == INT64_MAX
+template <>
+struct js_type_info_t<intptr_t> {
+  using type = int64_t;
+
+  static constexpr auto signature = js_int64;
+
+  static auto
+  marshall(intptr_t value, int64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, intptr_t value, int64_t &result) {
+    return marshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static int
+  marshall(js_env_t *env, intptr_t value, js_value_t *&result) {
+    if (options.checked) {
+      int err;
+
+      if (value > js_max_safe_integer) {
+        err = js_throw_range_errorf(env, nullptr, "Value '%llu' is greater than Number.MAX_SAFE_INTEGER", value);
+        assert(err == 0);
+
+        return js_pending_exception;
+      }
+    }
+
+    return js_create_int64(env, value, &result);
+  }
+
+  static auto
+  unmarshall(int64_t value, intptr_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *, int64_t value, intptr_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, intptr_t &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_int64>(env, value, "intptr");
+      if (err < 0) return err;
+    }
+
+    int64_t unmarshalled;
+    err = js_get_value_int64(env, value, &unmarshalled);
+    if (err < 0) return err;
+
+    result = unmarshalled;
+
+    return 0;
+  }
+};
+#elif INTPTR_MAX == INT32_MAX
+template <>
+struct js_type_info_t<intptr_t> {
+  using type = int32_t;
+
+  static constexpr auto signature = js_int32;
+
+  static auto
+  marshall(intptr_t value, int32_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, intptr_t value, int32_t &result) {
+    return marshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static int
+  marshall(js_env_t *env, intptr_t value, js_value_t *&result) {
+    return js_create_int32(env, value, &result);
+  }
+
+  static auto
+  unmarshall(int32_t value, intptr_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *, int32_t value, intptr_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, intptr_t &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_int32>(env, value, "intptr");
+      if (err < 0) return err;
+    }
+
+    int32_t unmarshalled;
+    err = js_get_value_int32(env, value, &unmarshalled);
+    if (err < 0) return err;
+
+    result = unmarshalled;
+
+    return 0;
+  }
+};
+#endif
+
+#if UINTPTR_MAX == UINT64_MAX
+template <>
+struct js_type_info_t<uintptr_t> {
+  using type = uint64_t;
+
+  static constexpr auto signature = js_uint64;
+
+  static auto
+  marshall(uintptr_t value, uint64_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, uintptr_t value, uint64_t &result) {
+    return marshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static int
+  marshall(js_env_t *env, uintptr_t value, js_value_t *&result) {
+    if (options.checked) {
+      int err;
+
+      if (value > js_max_safe_integer) {
+        err = js_throw_range_errorf(env, nullptr, "Value '%llu' is greater than Number.MAX_SAFE_INTEGER", value);
+        assert(err == 0);
+
+        return js_pending_exception;
+      }
+    }
+
+    return js_create_int64(env, value, &result);
+  }
+
+  static auto
+  unmarshall(uint64_t value, uintptr_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *, uint64_t value, uintptr_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, uintptr_t &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_uint64>(env, value, "uintptr");
+      if (err < 0) return err;
+    }
+
+    int64_t unmarshalled;
+    err = js_get_value_int64(env, value, &unmarshalled);
+    if (err < 0) return err;
+
+    result = unmarshalled;
+
+    return 0;
+  }
+};
+#elif UINTPTR_MAX == UINT32_MAX
+template <>
+struct js_type_info_t<uintptr_t> {
+  using type = uint32_t;
+
+  static constexpr auto signature = js_uint32;
+
+  static auto
+  marshall(uintptr_t value, uint32_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, uintptr_t value, uint32_t &result) {
+    return marshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static int
+  marshall(js_env_t *env, uintptr_t value, js_value_t *&result) {
+    return js_create_uint32(env, value, &result);
+  }
+
+  static auto
+  unmarshall(uint32_t value, uintptr_t &result) {
+    result = value;
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *, uint32_t value, uintptr_t &result) {
+    return unmarshall(value, result);
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, uintptr_t &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_uint32>(env, value, "uintptr");
+      if (err < 0) return err;
+    }
+
+    uint32_t unmarshalled;
+    err = js_get_value_uint32(env, value, &unmarshalled);
+    if (err < 0) return err;
+
+    result = unmarshalled;
+
+    return 0;
+  }
+};
+#endif
+
 template <>
 struct js_type_info_t<double> {
   using type = double;

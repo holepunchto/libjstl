@@ -213,6 +213,14 @@ A `number` in JavaScript with a valid range of `Number.MIN_SAFE_INTEGER` (-9,007
 
 A `number` in JavaScript with a valid range of 0 to `Number.MAX_SAFE_INTEGER` (9,007,199,254,740,991).
 
+#### `intptr_t`
+
+The same as `int32_t` on 32-bit systems and `int64_t` on 64-bit systems.
+
+#### `uintptr_t`
+
+The same as `uint32_t` on 32-bit systems and `uint64_t` on 64-bit systems.
+
 #### `double`
 
 A `number` in JavaScript with a valid range of `Number.MIN_VALUE` (5e-324) to `Number.MAX_VALUE` (1.7976931348623157e+308) and a precision of `Number.EPSILON`.
