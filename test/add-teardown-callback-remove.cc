@@ -1,15 +1,12 @@
 #include <assert.h>
 #include <js.h>
-#include <stdbool.h>
 #include <uv.h>
 
 #include "../include/jstl.h"
 
-int value = 42;
-
-int *
-on_call(js_env_t *env) {
-  return &value;
+void
+on_teardown() {
+  assert(false);
 }
 
 int
@@ -26,21 +23,10 @@ main() {
   e = js_create_env(loop, platform, NULL, &env);
   assert(e == 0);
 
-  js_handle_scope_t *scope;
-  e = js_open_handle_scope(env, &scope);
+  e = js_add_teardown_callback<on_teardown>(env);
   assert(e == 0);
 
-  js_function_t<int *> fn;
-  e = js_create_function<on_call>(env, fn);
-  assert(e == 0);
-
-  int *result;
-  e = js_call_function(env, fn, result);
-  assert(e == 0);
-
-  assert(result == &value);
-
-  e = js_close_handle_scope(env, scope);
+  e = js_remove_teardown_callback<on_teardown>(env);
   assert(e == 0);
 
   e = js_destroy_env(env);

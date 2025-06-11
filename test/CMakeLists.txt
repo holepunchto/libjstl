@@ -1,6 +1,12 @@
 fetch_package("github:holepunchto/libjs")
 
 list(APPEND tests
+  add-deferred-teardown-callback
+  add-deferred-teardown-callback-finish
+  add-teardown-callback
+  add-teardown-callback-remove
+  add-teardown-callback-remove-with-data
+  add-teardown-callback-with-data
   create-external-arraybuffer-with-finalizer
   create-external-arraybuffer-with-finalizer-detach
   create-function-pointer

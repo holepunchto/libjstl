@@ -5,7 +5,7 @@
 
 #include "../include/jstl.h"
 
-static int value = 42;
+int value = 42;
 
 void
 on_call(js_env_t *env, int *ptr) {

@@ -3474,6 +3474,89 @@ js_create_finalizer() {
   return js_finalizer_info_t<fn, T, U>::create();
 }
 
+template <auto fn, typename T = void>
+struct js_teardown_callback_info_t;
+
+template <void fn()>
+struct js_teardown_callback_info_t<fn> {
+  static auto
+  create() {
+    return +[](void *data) -> void {
+      fn();
+    };
+  }
+
+  static auto
+  add(js_env_t *env) {
+    return js_add_teardown_callback(env, create(), nullptr);
+  }
+
+  static auto
+  remove(js_env_t *env) {
+    return js_remove_teardown_callback(env, create(), nullptr);
+  }
+};
+
+template <typename T, void fn(T *)>
+struct js_teardown_callback_info_t<fn, T> {
+  static auto
+  create() {
+    return +[](void *data) -> void {
+      fn(static_cast<T *>(data));
+    };
+  }
+
+  static auto
+  add(js_env_t *env, T *data) {
+    return js_add_teardown_callback(env, create(), static_cast<void *>(data));
+  }
+
+  static auto
+  remove(js_env_t *env, T *data) {
+    return js_remove_teardown_callback(env, create(), static_cast<void *>(data));
+  }
+};
+
+template <void fn(js_deferred_teardown_t *)>
+struct js_teardown_callback_info_t<fn> {
+  static auto
+  create() {
+    return +[](js_deferred_teardown_t *handle, void *data) -> void {
+      fn(handle);
+    };
+  }
+
+  static auto
+  add(js_env_t *env) {
+    return js_add_deferred_teardown_callback(env, create(), nullptr, nullptr);
+  }
+
+  static auto
+  add(js_env_t *env, js_deferred_teardown_t *&result) {
+    return js_add_deferred_teardown_callback(env, create(), nullptr, &result);
+  }
+};
+
+template <typename T, void fn(js_deferred_teardown_t *, T *)>
+struct js_teardown_callback_info_t<fn, T> {
+  static auto
+  create() {
+    return +[](js_deferred_teardown_t *handle, void *data) -> void {
+      fn(handle, static_cast<T *>(data));
+    };
+  }
+
+  static auto
+  add(js_env_t *env, T *data) {
+    return js_add_deferred_teardown_callback(env, create(), static_cast<void *>(data), nullptr);
+  }
+
+  static auto
+  add(js_env_t *env, T *data, js_deferred_teardown_t *&result) {
+    return js_add_deferred_teardown_callback(env, create(), static_cast<void *>(data), &result);
+  }
+};
+
 template <auto fn, js_function_options_t options = js_function_options_t{}>
 static inline auto
 js_create_function(js_env_t *env, const char *name, size_t len, typename js_function_info_t<fn>::type &result) {
@@ -4922,4 +5005,45 @@ js_create_error(js_env_t *env, const T &code, const std::string &message, js_han
   if (err < 0) return err;
 
   return js_create_error<options>(env, code, string, result);
+}
+
+template <auto teardown>
+static inline auto
+js_add_teardown_callback(js_env_t *env) {
+  return js_teardown_callback_info_t<teardown>::add(env);
+}
+
+template <auto teardown, typename T>
+static inline auto
+js_add_teardown_callback(js_env_t *env, T *data) {
+  return js_teardown_callback_info_t<teardown, T>::add(env, data);
+}
+
+template <auto teardown>
+static inline auto
+js_add_teardown_callback(js_env_t *env, js_deferred_teardown_t *&result) {
+  return js_teardown_callback_info_t<teardown>::add(env, result);
+}
+
+template <auto teardown, typename T>
+static inline auto
+js_add_teardown_callback(js_env_t *env, T *data, js_deferred_teardown_t *&result) {
+  return js_teardown_callback_info_t<teardown, T>::add(env, data, result);
+}
+
+template <auto teardown>
+static inline auto
+js_remove_teardown_callback(js_env_t *env) {
+  return js_teardown_callback_info_t<teardown>::remove(env);
+}
+
+template <auto teardown, typename T>
+static inline auto
+js_remove_teardown_callback(js_env_t *env, T *data) {
+  return js_teardown_callback_info_t<teardown, T>::remove(env, data);
+}
+
+static inline auto
+js_finish_teardown_callback(js_deferred_teardown_t *handle) {
+  return js_finish_deferred_teardown_callback(handle);
 }
