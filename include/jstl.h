@@ -651,7 +651,7 @@ struct js_type_info_t<int64_t> {
   }
 
   template <js_type_options_t options>
-  static auto
+  static int
   marshall(js_env_t *env, int64_t value, js_value_t *&result) {
     if (options.checked) {
       int err;
@@ -659,9 +659,15 @@ struct js_type_info_t<int64_t> {
       if (value < js_min_safe_integer) {
         err = js_throw_range_errorf(env, nullptr, "Value '%lld' is less than Number.MIN_SAFE_INTEGER", value);
         assert(err == 0);
-      } else if (value > js_max_safe_integer) {
+
+        return js_pending_exception;
+      }
+
+      if (value > js_max_safe_integer) {
         err = js_throw_range_errorf(env, nullptr, "Value '%lld' is greater than Number.MAX_SAFE_INTEGER", value);
         assert(err == 0);
+
+        return js_pending_exception;
       }
     }
 
@@ -714,7 +720,7 @@ struct js_type_info_t<uint64_t> {
   }
 
   template <js_type_options_t options>
-  static auto
+  static int
   marshall(js_env_t *env, uint64_t value, js_value_t *&result) {
     if (options.checked) {
       int err;
@@ -722,6 +728,8 @@ struct js_type_info_t<uint64_t> {
       if (value > js_max_safe_integer) {
         err = js_throw_range_errorf(env, nullptr, "Value '%llu' is greater than Number.MAX_SAFE_INTEGER", value);
         assert(err == 0);
+
+        return js_pending_exception;
       }
     }
 
