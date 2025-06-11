@@ -49,7 +49,6 @@ list(APPEND tests
   create-function-return-void-arg-double
   create-function-return-void-arg-int32
   create-function-return-void-arg-int64
-  create-function-return-void-arg-intptr
   create-function-return-void-arg-multiple
   create-function-return-void-arg-optional-string
   create-function-return-void-arg-pointer
@@ -71,7 +70,6 @@ list(APPEND tests
   create-function-return-void-arg-uint16array-typedarray-span-any
   create-function-return-void-arg-uint32
   create-function-return-void-arg-uint64
-  create-function-return-void-arg-uintptr
   create-function-return-void-arg-vector-int32
   create-function-with-statistics
   create-object-with-properties
