@@ -6,8 +6,6 @@
 
 js_arraybuffer_span_t
 on_call(js_env_t *env) {
-  int e;
-
   static uint8_t data[5];
 
   data[0] = 'h';

@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.31)
 
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
+find_package(cmake-harden REQUIRED PATHS node_modules/cmake-harden)
 
 project(jstl CXX)
 

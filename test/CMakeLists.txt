@@ -92,6 +92,8 @@ list(APPEND tests
 foreach(test IN LISTS tests)
   add_executable(${test} ${test}.cc)
 
+  harden(${test} CXX)
+
   set_target_properties(
     ${test}
     PROPERTIES

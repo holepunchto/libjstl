@@ -7,8 +7,6 @@
 
 js_typedarray_span_t<uint16_t>
 on_call(js_env_t *env) {
-  int e;
-
   static uint16_t data[5];
 
   data[0] = 'h';

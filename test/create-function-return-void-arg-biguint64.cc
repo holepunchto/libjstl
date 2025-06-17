@@ -7,7 +7,7 @@
 
 void
 on_call(js_env_t *env, js_biguint64_t n) {
-  assert(n == -42);
+  assert(n == 42);
 }
 
 int
@@ -32,7 +32,7 @@ main() {
   e = js_create_function<on_call>(env, fn);
   assert(e == 0);
 
-  e = js_call_function(env, fn, js_biguint64_t(-42));
+  e = js_call_function(env, fn, js_biguint64_t(42));
   assert(e == 0);
 
   e = js_close_handle_scope(env, scope);

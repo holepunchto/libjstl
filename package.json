@@ -12,6 +12,7 @@
   },
   "homepage": "https://github.com/holepunchto/libjstl#readme",
   "devDependencies": {
-    "cmake-fetch": "^1.4.1"
+    "cmake-fetch": "^1.4.1",
+    "cmake-harden": "^1.1.0"
   }
 }

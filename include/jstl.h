@@ -495,7 +495,7 @@ constexpr int64_t js_min_safe_integer = -9007199254740991;
 
 constexpr int64_t js_max_safe_integer = 9007199254740991;
 
-static auto
+static inline auto
 js_is_int64(js_env_t *env, const js_handle_t &value, bool &result) {
   int err;
   err = js_is_number(env, static_cast<js_value_t *>(value), &result);
@@ -512,7 +512,7 @@ js_is_int64(js_env_t *env, const js_handle_t &value, bool &result) {
   return 0;
 }
 
-static auto
+static inline auto
 js_is_uint64(js_env_t *env, const js_handle_t &value, bool &result) {
   int err;
   err = js_is_number(env, static_cast<js_value_t *>(value), &result);
@@ -733,7 +733,7 @@ struct js_type_info_t<uint64_t> {
       }
     }
 
-    return js_create_int64(env, value, &result);
+    return js_create_int64(env, int64_t(value), &result);
   }
 
   static auto
@@ -763,7 +763,7 @@ struct js_type_info_t<uint64_t> {
     err = js_get_value_int64(env, value, &unmarshalled);
     if (err < 0) return err;
 
-    result = unmarshalled;
+    result = uint64_t(unmarshalled);
 
     return 0;
   }
@@ -1240,7 +1240,7 @@ struct js_type_info_t<js_arraybuffer_span_t> {
   }
 };
 
-constexpr size_t js_arraybuffer_span_dynamic = -1;
+constexpr auto js_arraybuffer_span_dynamic = size_t(-1);
 
 template <typename T, size_t N = js_arraybuffer_span_dynamic>
 struct js_arraybuffer_span_of_t;
@@ -1731,7 +1731,7 @@ struct js_type_info_t<js_typedarray_span_t<>> {
   }
 };
 
-constexpr size_t js_typedarray_span_dynamic = -1;
+constexpr auto js_typedarray_span_dynamic = size_t(-1);
 
 template <typename T, size_t N = js_typedarray_span_dynamic>
 struct js_typedarray_span_of_t;
@@ -2121,7 +2121,7 @@ struct js_type_info_t<utf8_t *> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const utf8_t *value, js_value_t *&result) {
-    return js_create_string_utf8(env, value, -1, &result);
+    return js_create_string_utf8(env, value, size_t(-1), &result);
   }
 
   template <js_type_options_t options>
@@ -2154,7 +2154,7 @@ struct js_type_info_t<const utf8_t *> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const utf8_t *value, js_value_t *&result) {
-    return js_create_string_utf8(env, value, -1, &result);
+    return js_create_string_utf8(env, value, size_t(-1), &result);
   }
 };
 
@@ -2212,7 +2212,7 @@ struct js_type_info_t<utf16_t *> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const utf16_t *value, js_value_t *&result) {
-    return js_create_string_utf16le(env, value, -1, &result);
+    return js_create_string_utf16le(env, value, size_t(-1), &result);
   }
 
   template <js_type_options_t options>
@@ -2245,7 +2245,7 @@ struct js_type_info_t<const utf16_t *> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const utf16_t *value, js_value_t *&result) {
-    return js_create_string_utf16le(env, value, -1, &result);
+    return js_create_string_utf16le(env, value, size_t(-1), &result);
   }
 };
 
@@ -2258,7 +2258,7 @@ struct js_type_info_t<char[N]> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const char value[N], js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), size_t(-1), &result);
   }
 
   template <js_type_options_t options>
@@ -2303,7 +2303,7 @@ struct js_type_info_t<char *> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const char *value, js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), size_t(-1), &result);
   }
 
   template <js_type_options_t options>
@@ -2336,7 +2336,7 @@ struct js_type_info_t<const char *> {
   template <js_type_options_t options>
   static auto
   marshall(js_env_t *env, const char *value, js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), -1, &result);
+    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), size_t(-1), &result);
   }
 };
 
@@ -3366,8 +3366,6 @@ struct js_function_info_t<fn> {
   template <js_function_options_t options>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
-    int err;
-
     auto typed = js_create_typed_callback<fn, options>();
 
     auto untyped = js_create_untyped_callback<fn, options>();
@@ -3408,8 +3406,6 @@ struct js_function_info_t<fn> {
   template <js_function_options_t options>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
-    int err;
-
     auto typed = js_create_typed_callback<fn, options>();
 
     auto untyped = js_create_untyped_callback<fn, options>();
@@ -4466,7 +4462,7 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
   int err;
 
   js_handle_t value;
-  err = js_function_info_t<fn>::template marshall<options>(env, name, -1, value);
+  err = js_function_info_t<fn>::template marshall<options>(env, name, size_t(-1), value);
   if (err < 0) return err;
 
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t *>(value));
