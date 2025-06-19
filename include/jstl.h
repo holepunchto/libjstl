@@ -3847,6 +3847,20 @@ js_create_arraybuffer(js_env_t *env, size_t len, std::span<T> &view, js_arraybuf
   return 0;
 }
 
+template <typename T>
+static inline auto
+js_create_arraybuffer(js_env_t *env, const T *data, size_t len, js_arraybuffer_t &result) {
+  int err;
+
+  T *view;
+  err = js_create_arraybuffer(env, len, view, result);
+  if (err < 0) return err;
+
+  std::copy(data, data + len, view);
+
+  return 0;
+}
+
 template <typename T, size_t N>
 static inline auto
 js_create_arraybuffer(js_env_t *env, const T data[N], js_arraybuffer_t &result) {
