@@ -4045,6 +4045,20 @@ js_create_typedarray(js_env_t *env, T *&data, js_typedarray_t<uint8_t> &result) 
   return js_create_typedarray(env, sizeof(T), arraybuffer, result);
 }
 
+template <js_typedarray_element_t T>
+static inline auto
+js_create_typedarray(js_env_t *env, const T *data, size_t len, js_typedarray_t<T> &result) {
+  int err;
+
+  T *view;
+  err = js_create_typedarray(env, len, view, result);
+  if (err < 0) return err;
+
+  std::copy(data, data + len, view);
+
+  return 0;
+}
+
 template <js_typedarray_element_t T, size_t N>
 static inline auto
 js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<T> &result) {
@@ -4055,6 +4069,20 @@ js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<T> &result)
   if (err < 0) return err;
 
   std::copy(data, data + N, view);
+
+  return 0;
+}
+
+template <typename T>
+static inline auto
+js_create_typedarray(js_env_t *env, const T *data, size_t len, js_typedarray_t<> &result) {
+  int err;
+
+  T *view;
+  err = js_create_typedarray(env, len, view, result);
+  if (err < 0) return err;
+
+  std::copy(data, data + len, view);
 
   return 0;
 }
