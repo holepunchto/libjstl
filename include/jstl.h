@@ -4248,6 +4248,12 @@ js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, T *&d
   return 0;
 }
 
+template <js_typedarray_element_t T>
+static inline auto
+js_get_typedarray_info(js_env_t *env, const js_typedarray_t<T> &typedarray, const T *&data, size_t &len) {
+  return js_get_typedarray_info(env, static_cast<js_value_t *>(typedarray), nullptr, reinterpret_cast<void **>(const_cast<T **>(&data)), &len, nullptr, nullptr);
+}
+
 template <typename T>
 static inline auto
 js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, const T *&data, size_t &len) {
