@@ -74,6 +74,7 @@ list(APPEND tests
   create-function-with-statistics
   create-object-with-properties
   create-reference-get-value
+  create-reference-overwrite-previous
   create-reference-move-assign
   create-typedarray-data-cast
   create-typedarray-get-info
