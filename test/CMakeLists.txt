@@ -22,6 +22,7 @@ list(APPEND tests
   create-function-return-int32
   create-function-return-int64
   create-function-return-pointer
+  create-function-return-shared-ptr
   create-function-return-string
   create-function-return-string-literal
   create-function-return-uint8array

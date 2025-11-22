@@ -4,7 +4,7 @@
 
 #include "../include/jstl.h"
 
-struct data {
+struct data_t {
   int32_t foo;
   bool bar;
 };
@@ -28,10 +28,10 @@ main() {
   assert(e == 0);
 
   js_typedarray_t<uint8_t> typedarray;
-  e = js_create_typedarray(env, sizeof(struct data), typedarray);
+  e = js_create_typedarray(env, sizeof(struct data_t), typedarray);
   assert(e == 0);
 
-  struct data *data;
+  struct data_t *data;
   e = js_get_typedarray_info(env, typedarray, data);
   assert(e == 0);
 

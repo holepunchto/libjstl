@@ -346,6 +346,10 @@ The elements of a `TypedArray` in JavaScript that is a view of elements of type 
 
 Either `undefined` or a value of type `T`.
 
+#### `std::shared_ptr<T>`
+
+An `external` value in JavaScript that is a shared pointer to an element of type `T`.
+
 ## License
 
 Apache-2.0

@@ -5,13 +5,13 @@
 
 #include "../include/jstl.h"
 
-struct data {
+struct data_t {
   int32_t foo;
   bool bar;
 };
 
 void
-on_call(js_env_t *env, js_typedarray_span_of_t<struct data> data) {
+on_call(js_env_t *env, js_typedarray_span_of_t<struct data_t> data) {
   assert(data.size() == 3);
 
   assert(data[0].foo == 1);
@@ -40,11 +40,11 @@ main() {
   e = js_open_handle_scope(env, &scope);
   assert(e == 0);
 
-  js_function_t<void, js_typedarray_span_of_t<struct data>> fn;
+  js_function_t<void, js_typedarray_span_of_t<struct data_t>> fn;
   e = js_create_function<on_call>(env, fn);
   assert(e == 0);
 
-  struct data data[3];
+  struct data_t data[3];
   data[0].foo = 1;
   data[0].bar = true;
   data[1].foo = 2;

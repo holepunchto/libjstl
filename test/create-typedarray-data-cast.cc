@@ -4,7 +4,7 @@
 
 #include "../include/jstl.h"
 
-struct data {
+struct data_t {
   int32_t foo;
   bool bar;
 };
@@ -27,7 +27,7 @@ main() {
   e = js_open_handle_scope(env, &scope);
   assert(e == 0);
 
-  struct data *data;
+  struct data_t *data;
 
   js_typedarray_t<uint8_t> typedarray;
   e = js_create_typedarray(env, data, typedarray);

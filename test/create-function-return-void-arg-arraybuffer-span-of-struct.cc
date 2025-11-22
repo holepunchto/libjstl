@@ -5,13 +5,13 @@
 
 #include "../include/jstl.h"
 
-struct data {
+struct data_t {
   int32_t foo;
   bool bar;
 };
 
 void
-on_call(js_env_t *env, js_arraybuffer_span_of_t<struct data, 1> data) {
+on_call(js_env_t *env, js_arraybuffer_span_of_t<struct data_t, 1> data) {
   assert(data->foo == 42);
   assert(data->bar == true);
 }
@@ -34,11 +34,11 @@ main() {
   e = js_open_handle_scope(env, &scope);
   assert(e == 0);
 
-  js_function_t<void, js_arraybuffer_span_of_t<struct data, 1>> fn;
+  js_function_t<void, js_arraybuffer_span_of_t<struct data_t, 1>> fn;
   e = js_create_function<on_call>(env, fn);
   assert(e == 0);
 
-  struct data data;
+  struct data_t data;
   data.foo = 42;
   data.bar = true;
 
