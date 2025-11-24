@@ -342,6 +342,10 @@ An `Array` in JavaScript represented as a C++ tuple.
 
 The elements of a `TypedArray` in JavaScript that is a view of elements of type `T`, represented as a C++ span.
 
+#### `std::span<const T>`
+
+The elements of a `TypedArray` in JavaScript that is an immutable view of elements of type `T`, represented as a C++ span.
+
 #### `std::optional<T>`
 
 Either `undefined` or a value of type `T`.

@@ -2708,6 +2708,29 @@ struct js_type_info_t<std::span<T>> {
 };
 
 template <typename T>
+struct js_type_info_t<std::span<const T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, const std::span<const T> &view, js_value_t *&result) {
+    int err;
+
+    js_value_t *arraybuffer;
+
+    T *data;
+    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
+    if (err < 0) return err;
+
+    std::copy(view.begin(), view.end(), data);
+
+    return js_create_typedarray(env, js_typedarray_info_t<T>::type, view.size(), arraybuffer, 0, &result);
+  }
+};
+
+template <typename T>
 struct js_type_info_t<std::optional<T>> {
   using type = js_value_t *;
 
