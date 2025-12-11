@@ -4382,27 +4382,47 @@ js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, std::
 }
 
 static inline auto
-js_get_value_bigint(js_env_t *env, const js_bigint_t &bigint, int64_t &result) {
+js_get_value(js_env_t *env, const js_boolean_t &boolean, bool &result) {
+  return js_get_value_bool(env, static_cast<js_value_t *>(boolean), &result);
+}
+
+static inline auto
+js_get_value(js_env_t *env, const js_number_t &number, uint32_t &result) {
+  return js_get_value_uint32(env, static_cast<js_value_t *>(number), &result);
+}
+
+static inline auto
+js_get_value(js_env_t *env, const js_number_t &number, int32_t &result) {
+  return js_get_value_int32(env, static_cast<js_value_t *>(number), &result);
+}
+
+static inline auto
+js_get_value(js_env_t *env, const js_number_t &number, int64_t &result) {
+  return js_get_value_int64(env, static_cast<js_value_t *>(number), &result);
+}
+
+static inline auto
+js_get_value(js_env_t *env, const js_bigint_t &bigint, int64_t &result) {
   return js_get_value_bigint_int64(env, static_cast<js_value_t *>(bigint), &result, nullptr);
 }
 
 static inline auto
-js_get_value_bigint(js_env_t *env, const js_bigint_t &bigint, int64_t &result, bool &lossless) {
+js_get_value(js_env_t *env, const js_bigint_t &bigint, int64_t &result, bool &lossless) {
   return js_get_value_bigint_int64(env, static_cast<js_value_t *>(bigint), &result, &lossless);
 }
 
 static inline auto
-js_get_value_bigint(js_env_t *env, const js_bigint_t &bigint, uint64_t &result) {
+js_get_value(js_env_t *env, const js_bigint_t &bigint, uint64_t &result) {
   return js_get_value_bigint_uint64(env, static_cast<js_value_t *>(bigint), &result, nullptr);
 }
 
 static inline auto
-js_get_value_bigint(js_env_t *env, const js_bigint_t &bigint, uint64_t &result, bool &lossless) {
+js_get_value(js_env_t *env, const js_bigint_t &bigint, uint64_t &result, bool &lossless) {
   return js_get_value_bigint_uint64(env, static_cast<js_value_t *>(bigint), &result, &lossless);
 }
 
 static inline auto
-js_get_value_string(js_env_t *env, const js_string_t &string, std::string &result) {
+js_get_value(js_env_t *env, const js_string_t &string, std::string &result) {
   int err;
 
   size_t len;
@@ -5030,7 +5050,7 @@ js_create_external(js_env_t *env, T *data, U *finalize_hint, js_external_t<T> &r
 
 template <typename T>
 static inline auto
-js_get_value_external(js_env_t *env, const js_external_t<T> &external, T *&result) {
+js_get_value(js_env_t *env, const js_external_t<T> &external, T *&result) {
   return js_get_value_external(env, static_cast<js_value_t *>(external), reinterpret_cast<void **>(&result));
 }
 
