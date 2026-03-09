@@ -28,7 +28,7 @@ main() {
   assert(e == 0);
 
   js_function_t<void> fn;
-  e = js_create_function<on_call, {.statistics = &on_call_stats}>(env, fn);
+  e = js_create_function<on_call, &on_call_stats>(env, fn);
   assert(e == 0);
 
   e = js_call_function(env, fn);
