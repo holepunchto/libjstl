@@ -2140,6 +2140,49 @@ struct js_type_info_t<std::shared_ptr<T>> {
   }
 };
 
+template <typename T>
+struct js_type_info_t<std::unique_ptr<T>> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_external;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *env, std::unique_ptr<T> &value, js_value_t *&result) {
+    int err;
+
+    auto handle = new std::unique_ptr<T>(value.release());
+
+    auto finalize = +[](js_env_t *, void *data, void *) {
+      delete reinterpret_cast<std::unique_ptr<T> *>(data);
+    };
+
+    err = js_create_external(env, reinterpret_cast<void *>(handle), finalize, nullptr, &result);
+    if (err < 0) delete handle;
+
+    return err;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, std::unique_ptr<T> &result) {
+    int err;
+
+    if constexpr (options.checked) {
+      err = js_check_value<js_is_external>(env, value, "external");
+      if (err < 0) return err;
+    }
+
+    std::unique_ptr<T> *handle;
+    err = js_get_value_external(env, value, reinterpret_cast<void **>(&handle));
+    if (err < 0) return err;
+
+    result = std::unique_ptr<T>(handle->release());
+
+    return 0;
+  }
+};
+
 template <size_t N>
 struct js_type_info_t<utf8_t[N]> {
   using type = js_value_t *;

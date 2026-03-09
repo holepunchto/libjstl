@@ -354,6 +354,10 @@ Either `undefined` or a value of type `T`.
 
 An `external` value in JavaScript that is a shared pointer to an element of type `T`.
 
+#### `std::unique_ptr<T>`
+
+An `external` value in JavaScript that is a unique pointer to an element of type `T`.
+
 ## License
 
 Apache-2.0
