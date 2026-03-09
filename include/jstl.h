@@ -202,7 +202,11 @@ struct js_persistent_t {
     that.ref_ = nullptr;
   }
 
-  js_persistent_t(const js_persistent_t &) = delete;
+  js_persistent_t(const js_persistent_t &that) : env_(that.env_), ref_(that.ref_) {
+    int err;
+    err = js_reference_ref(env_, ref_, nullptr);
+    assert(err == 0);
+  }
 
   ~js_persistent_t() {
     reset();
@@ -219,7 +223,16 @@ struct js_persistent_t {
   }
 
   void
-  operator=(const js_persistent_t &) = delete;
+  operator=(const js_persistent_t &that) {
+    reset();
+
+    env_ = that.env_;
+    ref_ = that.ref_;
+
+    int err;
+    err = js_reference_ref(env_, ref_, nullptr);
+    assert(err == 0);
+  }
 
   explicit operator bool() const {
     return ref_ != nullptr;
@@ -234,8 +247,15 @@ struct js_persistent_t {
     if (ref_ == nullptr) return;
 
     int err;
-    err = js_delete_reference(env_, ref_);
+
+    uint32_t count;
+    err = js_reference_unref(env_, ref_, &count);
     assert(err == 0);
+
+    if (count == 0) {
+      err = js_delete_reference(env_, ref_);
+      assert(err == 0);
+    }
 
     ref_ = nullptr;
   }
@@ -5035,20 +5055,6 @@ js_create_reference(js_env_t *env, const T &value, js_persistent_t<T> &result) {
 
   js_ref_t *ref;
   err = js_create_reference(env, static_cast<js_value_t *>(value), 1, &ref);
-  if (err < 0) return err;
-
-  result = js_persistent_t<T>(env, ref);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_create_weak_reference(js_env_t *env, const T &value, js_persistent_t<T> &result) {
-  int err;
-
-  js_ref_t *ref;
-  err = js_create_reference(env, static_cast<js_value_t *>(value), 0, &ref);
   if (err < 0) return err;
 
   result = js_persistent_t<T>(env, ref);
