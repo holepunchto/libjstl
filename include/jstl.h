@@ -2151,7 +2151,7 @@ struct js_type_info_t<std::unique_ptr<T>> {
   marshall(js_env_t *env, std::unique_ptr<T> &value, js_value_t *&result) {
     int err;
 
-    auto handle = new std::unique_ptr<T>(value.release());
+    auto handle = new std::unique_ptr<T>(std::move(value));
 
     auto finalize = +[](js_env_t *, void *data, void *) {
       delete reinterpret_cast<std::unique_ptr<T> *>(data);
@@ -2177,7 +2177,7 @@ struct js_type_info_t<std::unique_ptr<T>> {
     err = js_get_value_external(env, value, reinterpret_cast<void **>(&handle));
     if (err < 0) return err;
 
-    result = std::unique_ptr<T>(handle->release());
+    result = std::move(*handle);
 
     return 0;
   }
