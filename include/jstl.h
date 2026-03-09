@@ -3866,7 +3866,7 @@ js_create_bigint(js_env_t *env, uint64_t value, js_bigint_t &result) {
 template <size_t N>
 static inline auto
 js_create_string(js_env_t *env, const char value[N], js_string_t &result) {
-  return js_create_string_utf8(env, value, N, static_cast<js_value_t **>(result));
+  return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N, static_cast<js_value_t **>(result));
 }
 
 static inline auto
