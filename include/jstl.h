@@ -212,8 +212,8 @@ struct js_persistent_t {
   operator=(js_persistent_t &&that) {
     reset();
 
-    this->env_ = that.env_;
-    this->ref_ = that.ref_;
+    env_ = that.env_;
+    ref_ = that.ref_;
 
     that.ref_ = nullptr;
   }
