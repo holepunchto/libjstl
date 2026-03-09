@@ -999,6 +999,29 @@ struct js_type_info_t<js_biguint64_t> {
 };
 
 template <>
+struct js_type_info_t<js_handle_t> {
+  using type = js_value_t *;
+
+  static constexpr auto signature = js_object;
+
+  template <js_type_options_t options>
+  static auto
+  marshall(js_env_t *, js_handle_t &value, js_value_t *&result) {
+    result = static_cast<js_value_t *>(value);
+
+    return 0;
+  }
+
+  template <js_type_options_t options>
+  static auto
+  unmarshall(js_env_t *env, js_value_t *value, js_handle_t &result) {
+    result = js_handle_t(value);
+
+    return 0;
+  }
+};
+
+template <>
 struct js_type_info_t<js_string_t> {
   using type = js_value_t *;
 
