@@ -11,7 +11,7 @@ on_call(js_env_t *env, std::optional<js_string_t> string) {
 
   if (string) {
     std::string value;
-    e = js_get_value_string(env, *string, value);
+    e = js_get_value(env, *string, value);
     assert(e == 0);
 
     assert(value == "hello world");

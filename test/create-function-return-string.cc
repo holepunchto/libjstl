@@ -42,7 +42,7 @@ main() {
   assert(e == 0);
 
   std::string value;
-  e = js_get_value_string(env, result, value);
+  e = js_get_value(env, result, value);
   assert(e == 0);
 
   assert(value == "hello world");
