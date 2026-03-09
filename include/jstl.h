@@ -203,6 +203,8 @@ struct js_persistent_t {
   }
 
   js_persistent_t(const js_persistent_t &that) : env_(that.env_), ref_(that.ref_) {
+    if (ref_ == nullptr) return;
+
     int err;
     err = js_reference_ref(env_, ref_, nullptr);
     assert(err == 0);
@@ -228,6 +230,8 @@ struct js_persistent_t {
 
     env_ = that.env_;
     ref_ = that.ref_;
+
+    if (ref_ == nullptr) return;
 
     int err;
     err = js_reference_ref(env_, ref_, nullptr);
