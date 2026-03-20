@@ -5159,18 +5159,18 @@ js_add_finalizer(js_env_t *env, const js_object_t &object, T *data, U *finalize_
 }
 
 static inline auto
-js_create_error(js_env_t *env, const js_string_t &message, js_handle_t &result) {
+js_create_error(js_env_t *env, const js_string_t &message, js_object_t &result) {
   return js_create_error(env, nullptr, static_cast<js_value_t *>(message), static_cast<js_value_t **>(result));
 }
 
 static inline auto
-js_create_error(js_env_t *env, const js_handle_t &code, const js_string_t &message, js_handle_t &result) {
+js_create_error(js_env_t *env, const js_handle_t &code, const js_string_t &message, js_object_t &result) {
   return js_create_error(env, static_cast<js_value_t *>(code), static_cast<js_value_t *>(message), static_cast<js_value_t **>(result));
 }
 
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
-js_create_error(js_env_t *env, T code, const js_string_t &message, js_handle_t &result) {
+js_create_error(js_env_t *env, T code, const js_string_t &message, js_object_t &result) {
   int err;
 
   js_value_t *marshalled;
@@ -5181,7 +5181,7 @@ js_create_error(js_env_t *env, T code, const js_string_t &message, js_handle_t &
 }
 
 static inline auto
-js_create_error(js_env_t *env, const char *message, js_handle_t &result) {
+js_create_error(js_env_t *env, const char *message, js_object_t &result) {
   int err;
 
   js_string_t string;
@@ -5192,7 +5192,7 @@ js_create_error(js_env_t *env, const char *message, js_handle_t &result) {
 }
 
 static inline auto
-js_create_error(js_env_t *env, const js_handle_t &code, const char *message, js_handle_t &result) {
+js_create_error(js_env_t *env, const js_handle_t &code, const char *message, js_object_t &result) {
   int err;
 
   js_string_t string;
@@ -5204,7 +5204,7 @@ js_create_error(js_env_t *env, const js_handle_t &code, const char *message, js_
 
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
-js_create_error(js_env_t *env, T code, const char *message, js_handle_t &result) {
+js_create_error(js_env_t *env, T code, const char *message, js_object_t &result) {
   int err;
 
   js_string_t string;
@@ -5215,7 +5215,7 @@ js_create_error(js_env_t *env, T code, const char *message, js_handle_t &result)
 }
 
 static inline auto
-js_create_error(js_env_t *env, const std::string &message, js_handle_t &result) {
+js_create_error(js_env_t *env, const std::string &message, js_object_t &result) {
   int err;
 
   js_string_t string;
@@ -5226,7 +5226,7 @@ js_create_error(js_env_t *env, const std::string &message, js_handle_t &result) 
 }
 
 static inline auto
-js_create_error(js_env_t *env, const js_handle_t &code, const std::string &message, js_handle_t &result) {
+js_create_error(js_env_t *env, const js_handle_t &code, const std::string &message, js_object_t &result) {
   int err;
 
   js_string_t string;
@@ -5238,7 +5238,7 @@ js_create_error(js_env_t *env, const js_handle_t &code, const std::string &messa
 
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
-js_create_error(js_env_t *env, T code, const std::string &message, js_handle_t &result) {
+js_create_error(js_env_t *env, T code, const std::string &message, js_object_t &result) {
   int err;
 
   js_string_t string;
