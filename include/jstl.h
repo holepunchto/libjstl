@@ -39,7 +39,7 @@ concept js_typedarray_element =
   js_is_same<T, float> ||
   js_is_same<T, double>;
 
-struct js_typedarray_element_any_t;
+struct js_typedarray_element_any;
 
 struct js_handle_t {
   js_handle_t() : value_(nullptr) {}
@@ -143,7 +143,7 @@ struct js_arraybuffer_t : js_object_t {
   explicit js_arraybuffer_t(js_value_t *value) : js_object_t(value) {}
 };
 
-template <typename T = js_typedarray_element_any_t>
+template <typename T = js_typedarray_element_any>
 struct js_typedarray_t : js_object_t {
   js_typedarray_t() : js_object_t() {}
 
@@ -432,7 +432,7 @@ struct js_typedarray_info_t<double> {
 };
 
 template <>
-struct js_typedarray_info_t<js_typedarray_element_any_t> {
+struct js_typedarray_info_t<js_typedarray_element_any> {
   static constexpr auto label = "typedarray";
 
   static auto
@@ -441,7 +441,7 @@ struct js_typedarray_info_t<js_typedarray_element_any_t> {
   }
 };
 
-template <typename T = js_typedarray_element_any_t>
+template <typename T = js_typedarray_element_any>
 static inline auto
 js_is_typedarray(js_env_t *env, const js_handle_t &value, bool &result) {
   return js_typedarray_info_t<T>::is(env, value, result);
@@ -1559,7 +1559,7 @@ static T js_typedarray_span_nil[1] = {T()};
 
 }
 
-template <typename T = js_typedarray_element_any_t>
+template <typename T = js_typedarray_element_any>
 struct js_typedarray_span_t;
 
 template <js_typedarray_element T>
@@ -1643,7 +1643,7 @@ using js_float32array_span_t = js_typedarray_span_t<float>;
 using js_float64array_span_t = js_typedarray_span_t<double>;
 
 template <>
-struct js_typedarray_span_t<js_typedarray_element_any_t> {
+struct js_typedarray_span_t<js_typedarray_element_any> {
   js_typedarray_span_t() : data_(nullptr), size_(0) {}
 
   js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) : data_(len == 0 ? nullptr : data), size_(len * js_typedarray_element_size(type)) {}
@@ -1693,10 +1693,10 @@ private:
   size_t size_;
 };
 
-js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) -> js_typedarray_span_t<js_typedarray_element_any_t>;
+js_typedarray_span_t(void *data, size_t len, js_typedarray_type_t type) -> js_typedarray_span_t<js_typedarray_element_any>;
 
 template <typename T>
-js_typedarray_span_t(T *data, size_t len) -> js_typedarray_span_t<js_typedarray_element_any_t>;
+js_typedarray_span_t(T *data, size_t len) -> js_typedarray_span_t<js_typedarray_element_any>;
 
 template <typename T>
 struct js_type_info_t<js_typedarray_span_t<T>> {
