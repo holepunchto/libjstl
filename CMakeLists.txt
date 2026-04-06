@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.31)
+cmake_minimum_required(VERSION 4.0)
 
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
 find_package(cmake-harden REQUIRED PATHS node_modules/cmake-harden)
 
-project(jstl CXX)
+project(jstl C CXX)
 
 add_library(jstl INTERFACE)
 
