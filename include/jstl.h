@@ -5312,22 +5312,6 @@ js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &funct
   );
 }
 
-template <auto call, auto finalize, typename T, typename R, typename... A>
-static inline int
-js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &function, size_t queue_limit, size_t initial_thread_count, js_threadsafe_function_t *&result) {
-  return js_create_threadsafe_function(
-    env,
-    static_cast<js_value_t *>(function),
-    queue_limit,
-    initial_thread_count,
-    js_finalizer_info_t<finalize>::create(),
-    nullptr,
-    nullptr,
-    js_threadsafe_function_info_t<call, void, T, R, A...>::create(),
-    &result
-  );
-}
-
 template <auto call, typename C, typename T, typename R, typename... A>
 static inline int
 js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &function, size_t queue_limit, size_t initial_thread_count, C *context, js_threadsafe_function_t *&result) {
