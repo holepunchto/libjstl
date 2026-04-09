@@ -3647,6 +3647,49 @@ js_create_finalizer() {
   return js_finalizer_info_t<fn, T, U>::create();
 }
 
+template <auto fn, typename C = void, typename T = void, typename R = void, typename... A>
+struct js_threadsafe_function_info_t;
+
+template <void fn()>
+struct js_threadsafe_function_info_t<fn> {
+  static auto
+  create() {
+    return +[](js_env_t *env, js_value_t *function, void *context, void *data) -> void {
+      fn();
+    };
+  }
+};
+
+template <typename R, typename... A, void fn(js_env_t *env, js_function_t<R, A...> function)>
+struct js_threadsafe_function_info_t<fn, void, void, R, A...> {
+  static auto
+  create() {
+    return +[](js_env_t *env, js_value_t *function, void *context, void *data) -> void {
+      fn(env, js_function_t<R, A...>(function));
+    };
+  }
+};
+
+template <typename T, typename R, typename... A, void fn(js_env_t *env, js_function_t<R, A...> function, T *data)>
+struct js_threadsafe_function_info_t<fn, void, T, R, A...> {
+  static auto
+  create() {
+    return +[](js_env_t *env, js_value_t *function, void *context, void *data) -> void {
+      fn(env, js_function_t<R, A...>(function), reinterpret_cast<T *>(data));
+    };
+  }
+};
+
+template <typename C, typename T, typename R, typename... A, void fn(js_env_t *env, js_function_t<R, A...> function, C *context, T *data)>
+struct js_threadsafe_function_info_t<fn, C, T, R, A...> {
+  static auto
+  create() {
+    return +[](js_env_t *env, js_value_t *function, void *context, void *data) -> void {
+      fn(env, js_function_t<R, A...>(function), reinterpret_cast<C *>(context), reinterpret_cast<T *>(data));
+    };
+  }
+};
+
 template <auto fn, typename T = void>
 struct js_teardown_callback_info_t;
 
@@ -5246,6 +5289,102 @@ js_create_error(js_env_t *env, T code, const std::string &message, js_object_t &
   if (err < 0) return err;
 
   return js_create_error<options>(env, code, string, result);
+}
+
+static inline int
+js_create_threadsafe_function(js_env_t *env, const js_function_t<void> &function, size_t queue_limit, size_t initial_thread_count, js_threadsafe_function_t *&result) {
+  return js_create_threadsafe_function(env, static_cast<js_value_t *>(function), queue_limit, initial_thread_count, nullptr, nullptr, nullptr, nullptr, &result);
+}
+
+template <auto call, typename T, typename R, typename... A>
+static inline int
+js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &function, size_t queue_limit, size_t initial_thread_count, js_threadsafe_function_t *&result) {
+  return js_create_threadsafe_function(
+    env,
+    static_cast<js_value_t *>(function),
+    queue_limit,
+    initial_thread_count,
+    nullptr,
+    nullptr,
+    nullptr,
+    js_threadsafe_function_info_t<call, void, T, R, A...>::create(),
+    &result
+  );
+}
+
+template <auto call, auto finalize, typename T, typename R, typename... A>
+static inline int
+js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &function, size_t queue_limit, size_t initial_thread_count, js_threadsafe_function_t *&result) {
+  return js_create_threadsafe_function(
+    env,
+    static_cast<js_value_t *>(function),
+    queue_limit,
+    initial_thread_count,
+    js_finalizer_info_t<finalize>::create(),
+    nullptr,
+    nullptr,
+    js_threadsafe_function_info_t<call, void, T, R, A...>::create(),
+    &result
+  );
+}
+
+template <auto call, typename C, typename T, typename R, typename... A>
+static inline int
+js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &function, size_t queue_limit, size_t initial_thread_count, C *context, js_threadsafe_function_t *&result) {
+  return js_create_threadsafe_function(
+    env,
+    static_cast<js_value_t *>(function),
+    queue_limit,
+    initial_thread_count,
+    nullptr,
+    nullptr,
+    static_cast<void *>(context),
+    js_threadsafe_function_info_t<call, C, T, R, A...>::create(),
+    &result
+  );
+}
+
+template <auto call, auto finalize, typename C, typename T, typename R, typename... A>
+static inline int
+js_create_threadsafe_function(js_env_t *env, const js_function_t<R, A...> &function, size_t queue_limit, size_t initial_thread_count, C *context, js_threadsafe_function_t *&result) {
+  return js_create_threadsafe_function(
+    env,
+    static_cast<js_value_t *>(function),
+    queue_limit,
+    initial_thread_count,
+    js_finalizer_info_t<finalize, C>::create(),
+    nullptr,
+    static_cast<void *>(context),
+    js_threadsafe_function_info_t<call, C, T, R, A...>::create(),
+    &result
+  );
+}
+
+static inline int
+js_call_threadsafe_function(js_threadsafe_function_t *function) {
+  return js_call_threadsafe_function(function, nullptr, js_threadsafe_function_nonblocking);
+}
+
+static inline int
+js_call_threadsafe_function(js_threadsafe_function_t *function, js_threadsafe_function_call_mode_t mode) {
+  return js_call_threadsafe_function(function, nullptr, mode);
+}
+
+template <typename T>
+static inline int
+js_call_threadsafe_function(js_threadsafe_function_t *function, T *data) {
+  return js_call_threadsafe_function(function, reinterpret_cast<void *>(data), js_threadsafe_function_nonblocking);
+}
+
+template <typename T>
+static inline int
+js_call_threadsafe_function(js_threadsafe_function_t *function, T *data, js_threadsafe_function_call_mode_t mode) {
+  return js_call_threadsafe_function(function, reinterpret_cast<void *>(data), mode);
+}
+
+static inline int
+js_release_threadsafe_function(js_threadsafe_function_t *function) {
+  return js_release_threadsafe_function(function, js_threadsafe_function_release);
 }
 
 template <auto teardown>

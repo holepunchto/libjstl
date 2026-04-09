@@ -80,6 +80,9 @@ list(APPEND tests
   create-reference-get-value
   create-reference-overwrite-previous
   create-reference-move-assign
+  create-threadsafe-function
+  create-threadsafe-function-no-callback
+  create-threadsafe-function-with-finalizer
   create-typedarray-data-cast
   create-typedarray-get-info
   create-typedarray-get-info-any
