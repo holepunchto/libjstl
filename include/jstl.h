@@ -4579,6 +4579,11 @@ js_get_value(js_env_t *env, const js_string_t &string, std::string &result) {
 }
 
 static inline auto
+js_get_null(js_env_t *env, js_object_t &result) {
+  return js_get_null(env, static_cast<js_value_t **>(result));
+}
+
+static inline auto
 js_get_global(js_env_t *env, js_object_t &result) {
   return js_get_global(env, static_cast<js_value_t **>(result));
 }

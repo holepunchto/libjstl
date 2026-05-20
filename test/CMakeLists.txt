@@ -83,6 +83,7 @@ list(APPEND tests
   create-threadsafe-function
   create-threadsafe-function-no-callback
   create-threadsafe-function-with-finalizer
+  get-null
   create-typedarray-data-cast
   create-typedarray-get-info
   create-typedarray-get-info-any
