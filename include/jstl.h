@@ -2534,7 +2534,7 @@ struct js_type_info_t<T[N]> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), N, 0);
+    return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values), N, 0);
   }
 
   template <js_type_options_t options>
@@ -2584,7 +2584,7 @@ struct js_type_info_t<const T[N]> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), N, 0);
+    return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values), N, 0);
   }
 };
 
@@ -2609,7 +2609,7 @@ struct js_type_info_t<std::array<T, N>> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), N, 0);
+    return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values), N, 0);
   }
 
   template <js_type_options_t options>
@@ -2661,7 +2661,7 @@ struct js_type_info_t<std::vector<T>> {
       if (err < 0) return err;
     }
 
-    return js_set_array_elements(env, result, const_cast<const js_value_t **>(values.data()), len, 0);
+    return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values.data()), len, 0);
   }
 
   template <js_type_options_t options>
@@ -2711,7 +2711,7 @@ struct js_type_info_t<std::tuple<T...>> {
         js_marshall_untyped_value<options, T>(env, std::get<I>(tuple))...
       };
 
-      return js_set_array_elements(env, result, const_cast<const js_value_t **>(values), sizeof...(T), 0);
+      return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values), sizeof...(T), 0);
     } catch (int err) {
       return err;
     }
@@ -4977,7 +4977,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, T values[N], size_
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled), N, offset);
+  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled), N, offset);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
@@ -4992,7 +4992,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::array<T
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled), N, offset);
+  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled), N, offset);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename T>
@@ -5020,7 +5020,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T
       js_marshall_untyped_value<options, T>(env, std::get<I>(values))...
     };
 
-    return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(values), sizeof...(T), offset);
+    return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(values), sizeof...(T), offset);
   } catch (int err) {
     return err;
   }
