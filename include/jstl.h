@@ -4545,6 +4545,11 @@ js_get_value(js_env_t *env, const js_number_t &number, int64_t &result) {
 }
 
 static inline auto
+js_get_value(js_env_t *env, const js_number_t &number, double &result) {
+  return js_get_value_double(env, static_cast<js_value_t *>(number), &result);
+}
+
+static inline auto
 js_get_value(js_env_t *env, const js_bigint_t &bigint, int64_t &result) {
   return js_get_value_bigint_int64(env, static_cast<js_value_t *>(bigint), &result, nullptr);
 }
