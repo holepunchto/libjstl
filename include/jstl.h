@@ -2980,6 +2980,12 @@ js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
   return result;
 }
 
+template <js_type_options_t options = js_type_options_t(), typename... A, size_t... I>
+static inline auto
+js_unmarshall_untyped_values(js_env_t *env, js_value_t *const values[], std::index_sequence<I...>) {
+  return std::tuple<A...>{js_unmarshall_untyped_value<options, A>(env, values[I])...};
+}
+
 template <typename...>
 struct js_argument_info_t;
 
@@ -3206,16 +3212,6 @@ js_throw_exception(js_env_t *env) {
   }
 }
 
-template <js_type_options_t options, typename... A, size_t... I>
-static inline int
-js_unmarshall_untyped_values(js_env_t *env, js_value_t *const argv[], std::tuple<A...> &result, std::index_sequence<I...>) {
-  int err = 0;
-
-  (((err = js_type_info_t<A>::template unmarshall<options>(env, argv[I], std::get<I>(result))) == 0) && ...);
-
-  return err;
-}
-
 template <auto fn>
 struct js_typed_callback_t;
 
@@ -3401,11 +3397,13 @@ private:
   static js_value_t *
   call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
     if constexpr (is_noexcept) {
-      int err;
-
       std::tuple<A...> args;
-      err = js_unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, std::index_sequence<I...>());
-      if (err < 0) return nullptr;
+
+      try {
+        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
+      } catch (int) {
+        return nullptr;
+      }
 
       R value = fn(std::move(std::get<I>(args))...);
 
@@ -3475,8 +3473,12 @@ private:
       int err;
 
       std::tuple<A...> args;
-      err = js_unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, std::index_sequence<I...>());
-      if (err < 0) return nullptr;
+
+      try {
+        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
+      } catch (int) {
+        return nullptr;
+      }
 
       R value = fn(env, std::move(std::get<I>(args))...);
 
@@ -3585,8 +3587,12 @@ private:
       int err;
 
       std::tuple<A...> args;
-      err = js_unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, std::index_sequence<I...>());
-      if (err < 0) return;
+
+      try {
+        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
+      } catch (int) {
+        return;
+      }
 
       fn(std::move(std::get<I>(args))...);
     } else {
@@ -3647,11 +3653,13 @@ private:
   static void
   call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
     if constexpr (is_noexcept) {
-      int err;
-
       std::tuple<A...> args;
-      err = js_unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, std::index_sequence<I...>());
-      if (err < 0) return;
+
+      try {
+        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
+      } catch (int) {
+        return;
+      }
 
       fn(env, std::move(std::get<I>(args))...);
     } else {
