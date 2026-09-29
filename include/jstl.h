@@ -3397,6 +3397,8 @@ private:
   static js_value_t *
   call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
     if constexpr (is_noexcept) {
+      int err;
+
       std::tuple<A...> args;
 
       try {
@@ -3584,8 +3586,6 @@ private:
   static void
   call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
     if constexpr (is_noexcept) {
-      int err;
-
       std::tuple<A...> args;
 
       try {
