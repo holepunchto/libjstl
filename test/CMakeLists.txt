@@ -9,9 +9,12 @@ list(APPEND tests
   add-teardown-callback-with-data
   create-external-arraybuffer-with-finalizer
   create-external-arraybuffer-with-finalizer-detach
+  create-function-noexcept
   create-function-pointer
   create-function-receiver
   create-function-receiver-no-env
+  create-function-throw
+  create-function-throw-round-trip
   create-function-return-array-int32
   create-function-return-arraybuffer
   create-function-return-arraybuffer-span
