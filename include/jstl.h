@@ -3056,6 +3056,8 @@ struct js_function_options_t : js_type_options_t {
   constexpr js_function_options_t(const js_function_options_t &that) : js_type_options_t(that), scoped(that.scoped), statistics(that.statistics) {}
 
   constexpr js_function_options_t(js_function_statistics_t *statistics) : statistics(statistics) {}
+
+  constexpr js_function_options_t(bool scoped, js_function_statistics_t *statistics = nullptr) : scoped(scoped), statistics(statistics) {}
 };
 
 static inline std::string
