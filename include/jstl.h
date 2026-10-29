@@ -3098,6 +3098,8 @@ js_create_exception_reference(js_env_t *env, js_value_t *error) {
   return js_persistent_t<js_handle_t>(env, ref);
 }
 
+using js_pending_exception_t = decltype(js_pending_exception);
+
 struct js_exception_t : std::runtime_error {
   js_exception_t(js_env_t *env, js_value_t *error)
       : std::runtime_error(js_describe_exception(env, error)),
@@ -3200,6 +3202,7 @@ js_throw_exception(js_env_t *env) {
   try {
     throw;
   } catch (int) {
+  } catch (js_pending_exception_t) {
   } catch (const js_exception_t &error) {
     err = js_throw(env, static_cast<js_value_t *>(error.get(env)));
     assert(err == 0);
@@ -3210,7 +3213,11 @@ js_throw_exception(js_env_t *env) {
   } catch (const std::exception &error) {
     js_throw_native_exception(env, js_create_error, error.what(), exception);
   } catch (...) {
-    js_throw_native_exception(env, js_create_error, "Unknown native exception", exception);
+    bool is_pending;
+    err = js_is_exception_pending(env, &is_pending);
+    assert(err == 0);
+
+    if (!is_pending) js_throw_native_exception(env, js_create_error, "Unknown native exception", exception);
   }
 }
 
