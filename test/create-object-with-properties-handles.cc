@@ -29,7 +29,13 @@ main() {
   assert(e == 0);
 
   js_array_t array;
-  e = js_create_array(env, std::vector<std::string>{"a", "b"}, array);
+  e = js_create_array(env, 2, array);
+  assert(e == 0);
+
+  e = js_set_element(env, array, 0, std::string("a"));
+  assert(e == 0);
+
+  e = js_set_element(env, array, 1, std::string("b"));
   assert(e == 0);
 
   js_value_t *null;
