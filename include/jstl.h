@@ -8,6 +8,7 @@
 #include <stdexcept>
 #include <string>
 #include <tuple>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -868,7 +869,7 @@ struct js_type_info_t<js_bigint_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_bigint_t &bigint, js_value_t *&result) {
+  marshall(js_env_t *, const js_bigint_t &bigint, js_value_t *&result) {
     result = static_cast<js_value_t *>(bigint);
 
     return 0;
@@ -1039,7 +1040,7 @@ struct js_type_info_t<js_handle_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_handle_t &value, js_value_t *&result) {
+  marshall(js_env_t *, const js_handle_t &value, js_value_t *&result) {
     result = static_cast<js_value_t *>(value);
 
     return 0;
@@ -1062,7 +1063,7 @@ struct js_type_info_t<js_string_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_string_t &string, js_value_t *&result) {
+  marshall(js_env_t *, const js_string_t &string, js_value_t *&result) {
     result = static_cast<js_value_t *>(string);
 
     return 0;
@@ -1091,7 +1092,7 @@ struct js_type_info_t<js_symbol_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_symbol_t &symbol, js_value_t *&result) {
+  marshall(js_env_t *, const js_symbol_t &symbol, js_value_t *&result) {
     result = static_cast<js_value_t *>(symbol);
 
     return 0;
@@ -1120,7 +1121,7 @@ struct js_type_info_t<js_object_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_object_t &object, js_value_t *&result) {
+  marshall(js_env_t *, const js_object_t &object, js_value_t *&result) {
     result = static_cast<js_value_t *>(object);
 
     return 0;
@@ -1149,7 +1150,7 @@ struct js_type_info_t<js_array_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_array_t &array, js_value_t *&result) {
+  marshall(js_env_t *, const js_array_t &array, js_value_t *&result) {
     result = static_cast<js_value_t *>(array);
 
     return 0;
@@ -1178,7 +1179,7 @@ struct js_type_info_t<js_arraybuffer_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_arraybuffer_t &arraybuffer, js_value_t *&result) {
+  marshall(js_env_t *, const js_arraybuffer_t &arraybuffer, js_value_t *&result) {
     result = static_cast<js_value_t *>(arraybuffer);
 
     return 0;
@@ -1488,7 +1489,7 @@ struct js_type_info_t<js_typedarray_t<T>> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_typedarray_t<T> &typedarray, js_value_t *&result) {
+  marshall(js_env_t *, const js_typedarray_t<T> &typedarray, js_value_t *&result) {
     result = static_cast<js_value_t *>(typedarray);
 
     return 0;
@@ -1517,7 +1518,7 @@ struct js_type_info_t<js_typedarray_t<>> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_typedarray_t<> &typedarray, js_value_t *&result) {
+  marshall(js_env_t *, const js_typedarray_t<> &typedarray, js_value_t *&result) {
     result = static_cast<js_value_t *>(typedarray);
 
     return 0;
@@ -1995,7 +1996,7 @@ struct js_type_info_t<js_receiver_t> {
   static constexpr auto signature = js_object;
 
   static auto
-  marshall(js_receiver_t &receiver, js_value_t *&result) {
+  marshall(const js_receiver_t &receiver, js_value_t *&result) {
     result = static_cast<js_value_t *>(receiver);
 
     return 0;
@@ -2003,7 +2004,7 @@ struct js_type_info_t<js_receiver_t> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_receiver_t &receiver, js_value_t *&result) {
+  marshall(js_env_t *, const js_receiver_t &receiver, js_value_t *&result) {
     return marshall(receiver, result);
   }
 
@@ -2029,7 +2030,7 @@ struct js_type_info_t<js_function_t<R, A...>> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_function_t<R, A...> &function, js_value_t *&result) {
+  marshall(js_env_t *, const js_function_t<R, A...> &function, js_value_t *&result) {
     result = static_cast<js_value_t *>(function);
 
     return 0;
@@ -2058,7 +2059,7 @@ struct js_type_info_t<js_external_t<T>> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *, js_external_t<T> &external, js_value_t *&result) {
+  marshall(js_env_t *, const js_external_t<T> &external, js_value_t *&result) {
     result = static_cast<js_value_t *>(external);
 
     return 0;
@@ -2497,7 +2498,7 @@ struct js_type_info_t<std::string> {
 
   template <js_type_options_t options>
   static auto
-  marshall(js_env_t *env, std::string &value, js_value_t *&result) {
+  marshall(js_env_t *env, const std::string &value, js_value_t *&result) {
     return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value.data()), value.length(), &result);
   }
 
@@ -2653,9 +2654,10 @@ struct js_type_info_t<std::vector<T>> {
 
   static constexpr auto signature = js_object;
 
-  template <js_type_options_t options>
+  template <js_type_options_t options, typename V>
+    requires std::is_same_v<std::remove_const_t<V>, std::vector<T>>
   static auto
-  marshall(js_env_t *env, std::vector<T> &vector, js_value_t *&result) {
+  marshall(js_env_t *env, V &vector, js_value_t *&result) {
     int err;
 
     auto len = vector.size();
@@ -5251,7 +5253,7 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled.data()), len, offset);
+  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled.data()), len, offset);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename... T, size_t... I>
