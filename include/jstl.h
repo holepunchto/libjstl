@@ -2886,7 +2886,7 @@ struct js_property_t {
     return name_;
   }
 
-  const T &
+  T
   value() const {
     return value_;
   }
@@ -5293,7 +5293,9 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, j
   err = js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(name.data()), name.length(), &descriptor.name);
   if (err < 0) return err;
 
-  err = js_type_info_t<T>::template marshall<options>(env, property.value(), descriptor.value);
+  auto value = property.value();
+
+  err = js_type_info_t<T>::template marshall<options>(env, value, descriptor.value);
   if (err < 0) return err;
 
   result = descriptor;

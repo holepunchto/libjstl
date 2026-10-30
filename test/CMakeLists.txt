@@ -81,6 +81,7 @@ list(APPEND tests
   create-function-return-void-arg-vector-int32
   create-function-with-statistics
   create-object-with-properties
+  create-object-with-properties-handles
   create-reference-get-value
   create-reference-overwrite-previous
   create-reference-move-assign
