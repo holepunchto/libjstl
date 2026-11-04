@@ -23,7 +23,9 @@ list(APPEND tests
   create-function-return-biguint64
   create-function-return-bool
   create-function-return-double
+  create-function-return-external-hot
   create-function-return-int32
+  create-function-return-int32-arg-optional-uint32-hot
   create-function-return-int64
   create-function-return-pointer
   create-function-return-shared-ptr
@@ -43,6 +45,7 @@ list(APPEND tests
   create-function-return-uint64
   create-function-return-unique-ptr
   create-function-return-vector-int32
+  create-function-return-vector-int32-pending-exception
   create-function-return-void
   create-function-return-void-arg-array-int32
   create-function-return-void-arg-arraybuffer
