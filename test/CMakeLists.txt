@@ -14,6 +14,7 @@ list(APPEND tests
   create-function-receiver
   create-function-receiver-no-env
   create-function-throw
+  create-function-throw-hot
   create-function-throw-round-trip
   create-function-unscoped
   create-function-return-array-int32

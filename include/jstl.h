@@ -3221,24 +3221,59 @@ js_throw_exception(js_env_t *env) {
   }
 }
 
-template <auto fn>
+static inline void
+js_throw_typed_exception(js_env_t *env) {
+  int err;
+
+  js_handle_scope_t *scope;
+  err = js_open_handle_scope(env, &scope);
+  assert(err == 0);
+
+  js_throw_exception(env);
+
+  err = js_close_handle_scope(env, scope);
+  assert(err == 0);
+}
+
+static inline void
+js_throw_typed_exception(js_typed_callback_info_t *info) {
+  int err;
+
+  js_env_t *env;
+  err = js_get_typed_callback_info(info, &env, nullptr);
+  assert(err == 0);
+
+  js_throw_typed_exception(env);
+}
+
+template <auto fn, bool is_noexcept = js_is_noexcept<decltype(fn)>>
 struct js_typed_callback_t;
 
-template <typename R, typename... A, R fn(A...)>
-struct js_typed_callback_t<fn> {
+template <typename R, typename... A, R fn(A...), bool is_noexcept>
+struct js_typed_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> typename js_type_info_t<R>::type {
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(std::move(args))...));
+      if constexpr (is_noexcept) {
+        return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(std::move(args))...));
+      } else {
+        try {
+          return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(std::move(args))...));
+        } catch (...) {
+          js_throw_typed_exception(info);
+
+          return {};
+        }
+      }
     };
   }
 };
 
-template <typename R, typename... A, R fn(js_env_t *, A...)>
-struct js_typed_callback_t<fn> {
+template <typename R, typename... A, R fn(js_env_t *, A...), bool is_noexcept>
+struct js_typed_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
@@ -3255,6 +3290,22 @@ struct js_typed_callback_t<fn> {
 
 private:
   template <js_function_options_t options>
+  static typename js_type_info_t<R>::type
+  call(js_env_t *env, typename js_type_info_t<A>::type... args) noexcept {
+    if constexpr (is_noexcept) {
+      return js_marshall_typed_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...));
+    } else {
+      try {
+        return js_marshall_typed_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...));
+      } catch (...) {
+        js_throw_typed_exception(env);
+
+        return {};
+      }
+    }
+  }
+
+  template <js_function_options_t options>
   static auto
   create_with_scope() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> typename js_type_info_t<R>::type {
@@ -3270,7 +3321,7 @@ private:
       err = js_open_handle_scope(env, &scope);
       assert(err == 0);
 
-      auto result = js_marshall_typed_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...));
+      auto result = call<options>(env, std::move(args)...);
 
       err = js_close_handle_scope(env, scope);
       assert(err == 0);
@@ -3295,10 +3346,12 @@ private:
       err = js_open_escapable_handle_scope(env, &scope);
       assert(err == 0);
 
-      auto result = js_marshall_typed_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...));
+      auto result = call<options>(env, std::move(args)...);
 
-      err = js_escape_handle(env, scope, result, &result);
-      assert(err == 0);
+      if (result) {
+        err = js_escape_handle(env, scope, result, &result);
+        assert(err == 0);
+      }
 
       err = js_close_escapable_handle_scope(env, scope);
       assert(err == 0);
@@ -3319,26 +3372,34 @@ private:
       err = js_get_typed_callback_info(info, &env, nullptr);
       assert(err == 0);
 
-      return js_marshall_typed_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...));
+      return call<options>(env, std::move(args)...);
     };
   }
 };
 
-template <typename... A, void fn(A...)>
-struct js_typed_callback_t<fn> {
+template <typename... A, void fn(A...), bool is_noexcept>
+struct js_typed_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> void {
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      fn(js_unmarshall_typed_value<A>(std::move(args))...);
+      if constexpr (is_noexcept) {
+        fn(js_unmarshall_typed_value<A>(std::move(args))...);
+      } else {
+        try {
+          fn(js_unmarshall_typed_value<A>(std::move(args))...);
+        } catch (...) {
+          js_throw_typed_exception(info);
+        }
+      }
     };
   }
 };
 
-template <typename... A, void fn(js_env_t *, A...)>
-struct js_typed_callback_t<fn> {
+template <typename... A, void fn(js_env_t *, A...), bool is_noexcept>
+struct js_typed_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
@@ -3350,6 +3411,20 @@ struct js_typed_callback_t<fn> {
   }
 
 private:
+  template <js_function_options_t options>
+  static void
+  call(js_env_t *env, typename js_type_info_t<A>::type... args) noexcept {
+    if constexpr (is_noexcept) {
+      fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...);
+    } else {
+      try {
+        fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...);
+      } catch (...) {
+        js_throw_typed_exception(env);
+      }
+    }
+  }
+
   template <js_function_options_t options>
   static auto
   create_with_scope() {
@@ -3366,7 +3441,7 @@ private:
       err = js_open_handle_scope(env, &scope);
       assert(err == 0);
 
-      fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...);
+      call<options>(env, std::move(args)...);
 
       err = js_close_handle_scope(env, scope);
       assert(err == 0);
@@ -3385,7 +3460,7 @@ private:
       err = js_get_typed_callback_info(info, &env, nullptr);
       assert(err == 0);
 
-      fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...);
+      call<options>(env, std::move(args)...);
     };
   }
 };
@@ -3750,10 +3825,10 @@ private:
   }
 };
 
-template <auto fn, js_function_options_t options = js_function_options_t()>
+template <auto fn, js_function_options_t options = js_function_options_t(), bool is_noexcept = js_is_noexcept<decltype(fn)>>
 static inline auto
 js_create_typed_callback() {
-  return js_typed_callback_t<fn>::template create<options>();
+  return js_typed_callback_t<fn, is_noexcept>::template create<options>();
 }
 
 template <auto fn, js_function_options_t options = js_function_options_t(), bool is_noexcept = js_is_noexcept<decltype(fn)>>
@@ -3780,7 +3855,7 @@ struct js_function_info_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
-    auto typed = js_create_typed_callback<fn, options>();
+    auto typed = js_create_typed_callback<fn, options, is_noexcept>();
 
     auto untyped = js_create_untyped_callback<fn, options, is_noexcept>();
 
@@ -3822,7 +3897,7 @@ struct js_function_info_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   marshall(js_env_t *env, const char *name, size_t len, js_function_t<R, A...> &result) {
-    auto typed = js_create_typed_callback<fn, options>();
+    auto typed = js_create_typed_callback<fn, options, is_noexcept>();
 
     auto untyped = js_create_untyped_callback<fn, options, is_noexcept>();
 
