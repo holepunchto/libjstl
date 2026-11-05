@@ -2054,7 +2054,7 @@ template <typename T>
 struct js_type_info_t<js_external_t<T>> {
   using type = js_value_t *;
 
-  static constexpr auto signature = js_external;
+  static constexpr auto signature = js_object;
 
   template <js_type_options_t options>
   static auto
@@ -2134,7 +2134,7 @@ template <typename T>
 struct js_type_info_t<std::shared_ptr<T>> {
   using type = js_value_t *;
 
-  static constexpr auto signature = js_external;
+  static constexpr auto signature = js_object;
 
   template <js_type_options_t options>
   static auto
@@ -2177,7 +2177,7 @@ template <typename T>
 struct js_type_info_t<std::unique_ptr<T>> {
   using type = js_value_t *;
 
-  static constexpr auto signature = js_external;
+  static constexpr auto signature = js_object;
 
   template <js_type_options_t options>
   static auto
@@ -2534,7 +2534,7 @@ struct js_type_info_t<T[N]> {
     int err;
 
     err = js_create_array_with_length(env, N, &result);
-    assert(err == 0);
+    if (err < 0) return err;
 
     js_value_t *values[N];
 
@@ -2584,7 +2584,7 @@ struct js_type_info_t<const T[N]> {
     int err;
 
     err = js_create_array_with_length(env, N, &result);
-    assert(err == 0);
+    if (err < 0) return err;
 
     js_value_t *values[N];
 
@@ -2609,7 +2609,7 @@ struct js_type_info_t<std::array<T, N>> {
     int err;
 
     err = js_create_array_with_length(env, N, &result);
-    assert(err == 0);
+    if (err < 0) return err;
 
     js_value_t *values[N];
 
@@ -2661,7 +2661,7 @@ struct js_type_info_t<std::vector<T>> {
     auto len = vector.size();
 
     err = js_create_array_with_length(env, len, &result);
-    assert(err == 0);
+    if (err < 0) return err;
 
     std::vector<js_value_t *> values(len);
 
@@ -2713,7 +2713,7 @@ struct js_type_info_t<std::tuple<T...>> {
   marshall(js_env_t *env, std::tuple<T...> &tuple, js_value_t *&result, std::index_sequence<I...>) {
     int err;
     err = js_create_array_with_length(env, sizeof...(T), &result);
-    assert(err == 0);
+    if (err < 0) return err;
 
     try {
       js_value_t *values[] = {
@@ -2837,7 +2837,7 @@ template <typename T>
 struct js_type_info_t<std::optional<T>> {
   using type = js_value_t *;
 
-  static constexpr auto signature = js_type_info_t<T>::signature;
+  static constexpr auto signature = js_object;
 
   template <js_type_options_t options>
   static auto
@@ -3762,6 +3762,14 @@ js_create_untyped_callback() {
   return js_untyped_callback_t<fn, is_noexcept>::template create<options>();
 }
 
+constexpr bool
+js_is_handle_signature(int signature) {
+  return signature == js_null || signature == js_number || signature == js_string || signature == js_symbol || signature == js_object || signature == js_function || signature == js_bigint;
+}
+
+template <typename T>
+constexpr bool js_has_consistent_signature = !js_is_same<typename js_type_info_t<T>::type, js_value_t *> || js_is_handle_signature(js_type_info_t<T>::signature);
+
 template <auto fn, bool is_noexcept = js_is_noexcept<decltype(fn)>>
 struct js_function_info_t;
 
@@ -3775,6 +3783,8 @@ struct js_function_info_t<fn, is_noexcept> {
     auto typed = js_create_typed_callback<fn, options>();
 
     auto untyped = js_create_untyped_callback<fn, options, is_noexcept>();
+
+    static_assert(js_has_consistent_signature<R> && (js_has_consistent_signature<A> && ...), "A handle type must report a handle signature");
 
     js_callback_signature_t signature;
 
@@ -3815,6 +3825,8 @@ struct js_function_info_t<fn, is_noexcept> {
     auto typed = js_create_typed_callback<fn, options>();
 
     auto untyped = js_create_untyped_callback<fn, options, is_noexcept>();
+
+    static_assert(js_has_consistent_signature<R> && (js_has_consistent_signature<A> && ...), "A handle type must report a handle signature");
 
     js_callback_signature_t signature;
 
