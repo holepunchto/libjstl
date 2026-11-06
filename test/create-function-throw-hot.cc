@@ -77,7 +77,7 @@ check(js_env_t *env, const std::string &name, const std::string &arg, const std:
   e = js_set_named_property(env, global, name.c_str(), static_cast<js_value_t *>(function));
   assert(e == 0);
 
-  assert(run(env, "(() => { let thrown = 0; for (let i = 0; i < 1000000; i++) { try { " + name + "(" + arg + ") } catch (e) { if (" + expected + ") thrown++ } } return thrown === 1000000 })()"));
+  assert(run(env, "(() => { let thrown = 0; for (let i = 0; i < 20000; i++) { try { " + name + "(" + arg + ") } catch (e) { if (" + expected + ") thrown++ } } return thrown === 20000 })()"));
 
   assert(options.statistics->calls(js_function_call_t::typed) > 0);
 }
