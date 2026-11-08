@@ -5259,11 +5259,13 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<
   std::vector<js_value_t *> marshalled(len);
 
   for (uint32_t i = 0; i < len; i++) {
-    err = js_type_info_t<T>::template marshall<options>(env, values[i], marshalled[i]);
+    auto value = values[i];
+
+    err = js_type_info_t<T>::template marshall<options>(env, value, marshalled[i]);
     if (err < 0) return err;
   }
 
-  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<const js_value_t **>(marshalled.data()), len, offset);
+  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled.data()), len, offset);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename... T, size_t... I>

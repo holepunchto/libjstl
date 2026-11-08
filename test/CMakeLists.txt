@@ -7,6 +7,8 @@ list(APPEND tests
   add-teardown-callback-remove
   add-teardown-callback-remove-with-data
   add-teardown-callback-with-data
+  create-array-vector-object
+  create-array-vector-tuple
   create-external-arraybuffer-with-finalizer
   create-external-arraybuffer-with-finalizer-detach
   create-function-noexcept
