@@ -3469,11 +3469,12 @@ struct js_untyped_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
-    if constexpr (options.scoped) {
-      return create_with_scope<options>(std::index_sequence_for<A...>());
-    } else {
-      return create_without_scope<options>(std::index_sequence_for<A...>());
-    }
+    // V8 opens a handle scope around every call to a native function on this
+    // path and closes it when the function returns, releasing every handle the
+    // call created. A scope of our own would only repeat that. Fast calls get
+    // no scope from V8; js_typed_callback_t opens one there when the function
+    // is scoped.
+    return create<options>(std::index_sequence_for<A...>());
   }
 
 private:
@@ -3511,50 +3512,7 @@ private:
 
   template <js_function_options_t options, size_t... I>
   static auto
-  create_with_scope(std::index_sequence<I...>) {
-    return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
-      int err;
-
-      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
-
-      js_escapable_handle_scope_t *scope;
-      err = js_open_escapable_handle_scope(env, &scope);
-      assert(err == 0);
-
-      size_t argc = sizeof...(A);
-      js_value_t *argv[sizeof...(A)];
-
-      if constexpr (js_argument_info_t<A...>::has_receiver) {
-        argc--;
-
-        err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
-        assert(err == 0);
-
-        argc++;
-      } else {
-        err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
-        assert(err == 0);
-      }
-
-      assert(argc == sizeof...(A));
-
-      auto result = call<options>(env, argv, std::index_sequence<I...>());
-
-      if (result) {
-        err = js_escape_handle(env, scope, result, &result);
-        assert(err == 0);
-      }
-
-      err = js_close_escapable_handle_scope(env, scope);
-      assert(err == 0);
-
-      return result;
-    };
-  }
-
-  template <js_function_options_t options, size_t... I>
-  static auto
-  create_without_scope(std::index_sequence<I...>) {
+  create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
       int err;
 
@@ -3650,11 +3608,12 @@ struct js_untyped_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
-    if constexpr (options.scoped) {
-      return create_with_scope<options>(std::index_sequence_for<A...>());
-    } else {
-      return create_without_scope<options>(std::index_sequence_for<A...>());
-    }
+    // V8 opens a handle scope around every call to a native function on this
+    // path and closes it when the function returns, releasing every handle the
+    // call created. A scope of our own would only repeat that. Fast calls get
+    // no scope from V8; js_typed_callback_t opens one there when the function
+    // is scoped.
+    return create<options>(std::index_sequence_for<A...>());
   }
 
 private:
@@ -3682,45 +3641,7 @@ private:
 
   template <js_function_options_t options, size_t... I>
   static auto
-  create_with_scope(std::index_sequence<I...>) {
-    return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
-      int err;
-
-      if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
-
-      js_handle_scope_t *scope;
-      err = js_open_handle_scope(env, &scope);
-      assert(err == 0);
-
-      size_t argc = sizeof...(A);
-      js_value_t *argv[sizeof...(A)];
-
-      if constexpr (js_argument_info_t<A...>::has_receiver) {
-        argc--;
-
-        err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
-        assert(err == 0);
-
-        argc++;
-      } else {
-        err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
-        assert(err == 0);
-      }
-
-      assert(argc == sizeof...(A));
-
-      call<options>(env, argv, std::index_sequence<I...>());
-
-      err = js_close_handle_scope(env, scope);
-      assert(err == 0);
-
-      return js_marshall_untyped_value<js_type_options_t(options)>(env);
-    };
-  }
-
-  template <js_function_options_t options, size_t... I>
-  static auto
-  create_without_scope(std::index_sequence<I...>) {
+  create(std::index_sequence<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
       int err;
 
