@@ -3471,9 +3471,7 @@ struct js_untyped_callback_t<fn, is_noexcept> {
   create() {
     // V8 opens a handle scope around every call to a native function on this
     // path and closes it when the function returns, releasing every handle the
-    // call created. A scope of our own would only repeat that. Fast calls get
-    // no scope from V8; js_typed_callback_t opens one there when the function
-    // is scoped.
+    // call created.
     return create<options>(std::index_sequence_for<A...>());
   }
 
@@ -3610,9 +3608,7 @@ struct js_untyped_callback_t<fn, is_noexcept> {
   create() {
     // V8 opens a handle scope around every call to a native function on this
     // path and closes it when the function returns, releasing every handle the
-    // call created. A scope of our own would only repeat that. Fast calls get
-    // no scope from V8; js_typed_callback_t opens one there when the function
-    // is scoped.
+    // call created.
     return create<options>(std::index_sequence_for<A...>());
   }
 
