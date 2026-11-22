@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 struct data_t {
   int32_t foo;

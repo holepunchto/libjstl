@@ -5,7 +5,7 @@
 #include <stdexcept>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 struct unknown_error {};
 

@@ -3,7 +3,7 @@
 #include <string.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 int
 main() {

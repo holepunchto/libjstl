@@ -5,7 +5,7 @@
 #include <uv.h>
 #include <vector>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 int
 main() {

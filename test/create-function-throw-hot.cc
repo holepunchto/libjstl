@@ -4,7 +4,7 @@
 #include <string>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 js_function_statistics_t stats_void;
 js_function_statistics_t stats_result;

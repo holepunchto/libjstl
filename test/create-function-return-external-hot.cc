@@ -1,4 +1,4 @@
-#include "../include/jstl.h"
+#include <jstl.h>
 #include <assert.h>
 #include <js.h>
 #include <uv.h>

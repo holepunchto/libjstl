@@ -3,7 +3,7 @@
 #include <stdbool.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 static bool constructor_called = false;
 static bool destructor_called = false;

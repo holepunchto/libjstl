@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 uint32_t
 on_call(js_env_t *env) {

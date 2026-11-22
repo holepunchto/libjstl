@@ -4,7 +4,7 @@
 #include <string>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 struct test_error : std::runtime_error {
   test_error() : std::runtime_error("thrown from native") {}

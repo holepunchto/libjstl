@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 void
 on_call(js_env_t *env, js_typedarray_t<uint8_t> typedarray) {

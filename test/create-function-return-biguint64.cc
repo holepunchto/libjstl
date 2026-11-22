@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 js_biguint64_t
 on_call(js_env_t *env) {

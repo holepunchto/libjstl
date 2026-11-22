@@ -1,35 +1,18 @@
 cmake_minimum_required(VERSION 4.0)
 
 find_package(cmake-fetch REQUIRED PATHS node_modules/cmake-fetch)
-find_package(cmake-harden REQUIRED PATHS node_modules/cmake-harden)
+find_package(cmake-prelude REQUIRED PATHS node_modules/cmake-prelude)
+find_package(cmake-test REQUIRED PATHS node_modules/cmake-test)
 
-project(jstl C CXX)
+project(jstl LANGUAGES C CXX VERSION 0.0.0)
 
-add_library(jstl INTERFACE)
-
-set_target_properties(
+add_library_targets(
   jstl
-  PROPERTIES
-  C_STANDARD 11
-  CXX_STANDARD 20
-  CXX_SCAN_FOR_MODULES OFF
-  POSITION_INDEPENDENT_CODE ON
-)
-
-target_sources(
-  jstl
-  INTERFACE
+  HEADERS
     include/jstl.h
+  FEATURES
+    cxx_std_20
+  SOURCES NONE
 )
 
-target_include_directories(
-  jstl
-  INTERFACE
-    include
-)
-
-if(PROJECT_IS_TOP_LEVEL)
-  enable_testing()
-
-  add_subdirectory(test)
-endif()
+add_test_subdirectory(test)

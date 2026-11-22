@@ -2,7 +2,7 @@
 #include <js.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 bool
 on_call(js_env_t *env, int32_t n) {

@@ -2,7 +2,7 @@
 #include <js.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 void
 on_teardown(js_deferred_teardown_t *) {

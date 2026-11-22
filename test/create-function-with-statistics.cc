@@ -2,7 +2,7 @@
 #include <js.h>
 #include <uv.h>
 
-#include "../include/jstl.h"
+#include <jstl.h>
 
 js_function_statistics_t on_call_stats;
 
