@@ -2,7 +2,7 @@
 #include <js.h>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 static bool constructor_called = false;
 static bool destructor_called = false;

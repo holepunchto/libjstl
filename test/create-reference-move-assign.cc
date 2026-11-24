@@ -2,7 +2,7 @@
 #include <js.h>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 int
 main() {

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 std::span<uint16_t>
 on_call(js_env_t *env) {
