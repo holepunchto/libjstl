@@ -1,6 +1,6 @@
 fetch_package("github:holepunchto/libjs")
 
-add_test_executables(
+set(tests
   add-deferred-teardown-callback.cc
   add-deferred-teardown-callback-finish.cc
   add-teardown-callback.cc
@@ -25,15 +25,19 @@ add_test_executables(
   create-function-return-bigint64.cc
   create-function-return-biguint64.cc
   create-function-return-bool.cc
+  create-function-return-date-arg-date.cc
   create-function-return-double.cc
   create-function-return-external-hot.cc
   create-function-return-int32.cc
   create-function-return-int32-arg-optional-uint32-hot.cc
   create-function-return-int64.cc
+  create-function-return-pair-arg-pair.cc
   create-function-return-pointer.cc
   create-function-return-shared-ptr.cc
+  create-function-return-string-view.cc
   create-function-return-string.cc
   create-function-return-string-literal.cc
+  create-function-return-u16string-arg-u16string.cc
   create-function-return-uint8array.cc
   create-function-return-uint8array-any.cc
   create-function-return-uint8array-span.cc
@@ -108,7 +112,47 @@ add_test_executables(
   set-get-property-literal-int32.cc
   set-get-property-literal-struct.cc
   set-get-property-literal-uint32.cc
+)
+
+add_test_executables(
+  ${tests}
   LINK
     jstl::headers
     js::<TYPE>
 )
+
+# Tests that don't include <jstl/std.h> are built a second time without
+# exceptions, RTTI, or the C++ standard library, which fails to link if the
+# core header pulls in anything from the C++ runtime. Linking the static libjs
+# would pull it in regardless, so this needs the shared library.
+include(CheckLinkerFlag)
+
+check_linker_flag(CXX -nostdlib++ supports_nostdlibxx)
+
+if(supports_nostdlibxx AND TARGET js::shared)
+  set(freestanding_tests)
+
+  foreach(test IN LISTS tests)
+    file(READ "${test}" source)
+
+    if(NOT source MATCHES "#include <jstl/std.h>")
+      list(APPEND freestanding_tests "${test}")
+    endif()
+  endforeach()
+
+  add_test_executables(
+    ${freestanding_tests}
+    PREFIX freestanding-
+    LINK
+      jstl::headers
+      js::<TYPE>
+  )
+
+  foreach(test IN LISTS freestanding_tests)
+    cmake_path(REMOVE_EXTENSION test LAST_ONLY OUTPUT_VARIABLE target)
+
+    target_compile_options(freestanding-${target} PRIVATE -fno-exceptions -fno-rtti)
+
+    target_link_options(freestanding-${target} PRIVATE -nostdlib++)
+  endforeach()
+endif()

@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 std::array<int32_t, 3>
 on_call(js_env_t *env) {

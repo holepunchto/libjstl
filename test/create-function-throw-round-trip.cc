@@ -4,7 +4,7 @@
 #include <string>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 struct test_error : std::runtime_error {
   test_error() : std::runtime_error("thrown from native") {}
@@ -22,7 +22,7 @@ on_catch_native(js_env_t *env, js_function_t<void> fn) {
   if (e == 0) return false;
 
   try {
-    js_check_exception(env);
+    js__check_exception(env);
   } catch (const test_error &error) {
     return std::string(error.what()) == "thrown from native";
   }
@@ -34,7 +34,7 @@ void
 on_propagate(js_env_t *env, js_function_t<void> fn) {
   int e = js_call_function(env, fn);
 
-  if (e < 0) js_check_exception(env);
+  if (e < 0) js__check_exception(env);
 }
 
 std::string
@@ -44,7 +44,7 @@ on_describe(js_env_t *env, js_function_t<void> fn) {
   assert(e < 0);
 
   try {
-    js_check_exception(env);
+    js__check_exception(env);
   } catch (const js_exception_t &error) {
     return error.what();
   }

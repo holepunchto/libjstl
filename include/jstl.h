@@ -1,27 +1,94 @@
 #pragma once
 
-#include <array>
-#include <exception>
-#include <memory>
-#include <optional>
-#include <span>
-#include <stdexcept>
-#include <string>
-#include <tuple>
-#include <utility>
-#include <vector>
-
+#include <assert.h>
 #include <js.h>
 #include <math.h>
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <utf.h>
+
+#if defined(__cpp_exceptions) || defined(_CPPUNWIND)
+#define JS__EXCEPTIONS 1
+#else
+#define JS__EXCEPTIONS 0
+#endif
+
+#if JS__EXCEPTIONS
+#include <exception>
+#include <stdexcept>
+#include <string>
+#endif
 
 #ifndef NDEBUG
 constexpr bool js_is_debug = true;
 #else
 constexpr bool js_is_debug = false;
 #endif
+
+template <typename T>
+struct js__remove_reference_t {
+  using type = T;
+};
+
+template <typename T>
+struct js__remove_reference_t<T &> {
+  using type = T;
+};
+
+template <typename T>
+struct js__remove_reference_t<T &&> {
+  using type = T;
+};
+
+template <typename T>
+constexpr typename js__remove_reference_t<T>::type &&
+js__move(T &&value) noexcept {
+  return static_cast<typename js__remove_reference_t<T>::type &&>(value);
+}
+
+template <typename T, T... I>
+struct js__integer_sequence_t {};
+
+template <size_t... I>
+using js__index_sequence_t = js__integer_sequence_t<size_t, I...>;
+
+#if defined(__GNUC__) && !defined(__clang__)
+template <size_t N>
+using js__make_index_sequence_t = js__integer_sequence_t<size_t, __integer_pack(N)...>;
+#else
+template <size_t N>
+using js__make_index_sequence_t = __make_integer_seq<js__integer_sequence_t, size_t, N>;
+#endif
+
+template <typename... T>
+using js__index_sequence_for_t = js__make_index_sequence_t<sizeof...(T)>;
+
+template <size_t I, typename T>
+struct js__tuple_element_t {
+  T value;
+};
+
+template <typename S, typename... T>
+struct js__tuple_base_t;
+
+template <size_t... I, typename... T>
+struct js__tuple_base_t<js__index_sequence_t<I...>, T...> : js__tuple_element_t<I, T>... {};
+
+template <typename... T>
+struct js__tuple_t : js__tuple_base_t<js__index_sequence_for_t<T...>, T...> {};
+
+template <size_t I, typename T>
+static inline T &
+js__get(js__tuple_element_t<I, T> &element) {
+  return element.value;
+}
+
+template <typename T>
+static inline void
+js__copy(const T *begin, const T *end, T *result) {
+  while (begin != end) *result++ = *begin++;
+}
 
 template <typename A, typename B>
 constexpr bool js_is_same = false;
@@ -56,8 +123,6 @@ struct js_handle_t {
   explicit js_handle_t(js_value_t *value) : value_(value) {}
 
   js_handle_t(const js_handle_t &value) : js_handle_t(value.value_) {}
-
-  virtual ~js_handle_t() = default;
 
   explicit operator bool() const {
     return value_ != nullptr;
@@ -1202,14 +1267,14 @@ struct js_type_info_t<js_arraybuffer_t> {
 namespace {
 
 template <typename T>
-static T js_arraybuffer_span_nil[1] = {T()};
+static T js__arraybuffer_span_nil[1] = {T()};
 
 } // namespace
 
 struct js_arraybuffer_span_t {
-  js_arraybuffer_span_t() : data_(js_arraybuffer_span_nil<uint8_t>), size_(0) {}
+  js_arraybuffer_span_t() : data_(js__arraybuffer_span_nil<uint8_t>), size_(0) {}
 
-  js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil<uint8_t> : data), size_(len) {}
+  js_arraybuffer_span_t(uint8_t *data, size_t len) : data_(len == 0 ? js__arraybuffer_span_nil<uint8_t> : data), size_(len) {}
 
   uint8_t &
   operator[](size_t i) {
@@ -1277,7 +1342,7 @@ struct js_type_info_t<js_arraybuffer_span_t> {
     err = js_create_arraybuffer(env, view.size(), reinterpret_cast<void **>(&data), &result);
     if (err < 0) return err;
 
-    std::copy(view.begin(), view.end(), data);
+    js__copy(view.begin(), view.end(), data);
 
     return 0;
   }
@@ -1342,9 +1407,9 @@ js_arraybuffer_span_of_t(T *data) -> js_arraybuffer_span_of_t<T, 1>;
 
 template <typename T>
 struct js_arraybuffer_span_of_t<T, js_arraybuffer_span_dynamic> {
-  js_arraybuffer_span_of_t() : data_(js_arraybuffer_span_nil<T>), size_(0) {}
+  js_arraybuffer_span_of_t() : data_(js__arraybuffer_span_nil<T>), size_(0) {}
 
-  js_arraybuffer_span_of_t(T *data, size_t len) : data_(len == 0 ? js_arraybuffer_span_nil<T> : data), size_(len) {}
+  js_arraybuffer_span_of_t(T *data, size_t len) : data_(len == 0 ? js__arraybuffer_span_nil<T> : data), size_(len) {}
 
   T &
   operator[](size_t i) {
@@ -1452,7 +1517,7 @@ struct js_type_info_t<js_arraybuffer_span_of_t<T>> {
     err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &result);
     if (err < 0) return err;
 
-    std::copy(view.begin(), view.end(), data);
+    js__copy(view.begin(), view.end(), data);
 
     return 0;
   }
@@ -1564,7 +1629,7 @@ js_typedarray_element_size(js_typedarray_type_t type) {
 namespace {
 
 template <typename T>
-static T js_typedarray_span_nil[1] = {T()};
+static T js__typedarray_span_nil[1] = {T()};
 
 }
 
@@ -1573,9 +1638,9 @@ struct js_typedarray_span_t;
 
 template <js_typedarray_element T>
 struct js_typedarray_span_t<T> {
-  js_typedarray_span_t() : data_(js_typedarray_span_nil<T>), size_(0) {}
+  js_typedarray_span_t() : data_(js__typedarray_span_nil<T>), size_(0) {}
 
-  js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
+  js_typedarray_span_t(T *data, size_t len) : data_(len == 0 ? js__typedarray_span_nil<T> : data), size_(len) {}
 
   T &
   operator[](size_t i) {
@@ -1724,7 +1789,7 @@ struct js_type_info_t<js_typedarray_span_t<T>> {
     err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
     if (err < 0) return err;
 
-    std::copy(view.begin(), view.end(), data);
+    js__copy(view.begin(), view.end(), data);
 
     return js_create_typedarray(env, js_typedarray_info_t<T>::type, view.size(), arraybuffer, 0, &result);
   }
@@ -1767,7 +1832,7 @@ struct js_type_info_t<js_typedarray_span_t<>> {
     err = js_create_arraybuffer(env, view.size_bytes(), &data, &arraybuffer);
     if (err < 0) return err;
 
-    std::copy(view.begin(), view.end(), static_cast<uint8_t *>(data));
+    js__copy(view.begin(), view.end(), static_cast<uint8_t *>(data));
 
     return js_create_typedarray(env, js_uint8array, view.size_bytes(), arraybuffer, 0, &result);
   }
@@ -1833,9 +1898,9 @@ js_typedarray_span_of_t(T *data) -> js_typedarray_span_of_t<T, 1>;
 
 template <typename T>
 struct js_typedarray_span_of_t<T, js_typedarray_span_dynamic> {
-  js_typedarray_span_of_t() : data_(js_typedarray_span_nil<T>), size_(0) {}
+  js_typedarray_span_of_t() : data_(js__typedarray_span_nil<T>), size_(0) {}
 
-  js_typedarray_span_of_t(T *data, size_t len) : data_(len == 0 ? js_typedarray_span_nil<T> : data), size_(len) {}
+  js_typedarray_span_of_t(T *data, size_t len) : data_(len == 0 ? js__typedarray_span_nil<T> : data), size_(len) {}
 
   T &
   operator[](size_t i) {
@@ -1956,7 +2021,7 @@ struct js_type_info_t<js_typedarray_span_of_t<T>> {
     err = js_create_typedarray(env, js_uint8array, view.size_bytes(), arraybuffer, 0, &result);
     if (err < 0) return err;
 
-    std::copy(view.begin(), view.end(), data);
+    js__copy(view.begin(), view.end(), data);
 
     return 0;
   }
@@ -2130,92 +2195,6 @@ struct js_type_info_t<T *> {
   }
 };
 
-template <typename T>
-struct js_type_info_t<std::shared_ptr<T>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::shared_ptr<T> &value, js_value_t *&result) {
-    int err;
-
-    auto handle = new std::shared_ptr<T>(value);
-
-    auto finalize = +[](js_env_t *, void *data, void *) {
-      delete reinterpret_cast<std::shared_ptr<T> *>(data);
-    };
-
-    err = js_create_external(env, reinterpret_cast<void *>(handle), finalize, nullptr, &result);
-    if (err < 0) delete handle;
-
-    return err;
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::shared_ptr<T> &result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_external>(env, value, "external");
-      if (err < 0) return err;
-    }
-
-    std::shared_ptr<T> *handle;
-    err = js_get_value_external(env, value, reinterpret_cast<void **>(&handle));
-    if (err < 0) return err;
-
-    result = *handle;
-
-    return 0;
-  }
-};
-
-template <typename T>
-struct js_type_info_t<std::unique_ptr<T>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::unique_ptr<T> &value, js_value_t *&result) {
-    int err;
-
-    auto handle = new std::unique_ptr<T>(std::move(value));
-
-    auto finalize = +[](js_env_t *, void *data, void *) {
-      delete reinterpret_cast<std::unique_ptr<T> *>(data);
-    };
-
-    err = js_create_external(env, reinterpret_cast<void *>(handle), finalize, nullptr, &result);
-    if (err < 0) delete handle;
-
-    return err;
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::unique_ptr<T> &result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_external>(env, value, "external");
-      if (err < 0) return err;
-    }
-
-    std::unique_ptr<T> *handle;
-    err = js_get_value_external(env, value, reinterpret_cast<void **>(&handle));
-    if (err < 0) return err;
-
-    result = std::move(*handle);
-
-    return 0;
-  }
-};
-
 template <size_t N>
 struct js_type_info_t<utf8_t[N]> {
   using type = js_value_t *;
@@ -2271,26 +2250,6 @@ struct js_type_info_t<utf8_t *> {
   static auto
   marshall(js_env_t *env, const utf8_t *value, js_value_t *&result) {
     return js_create_string_utf8(env, value, size_t(-1), &result);
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, utf8_t *&result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_string>(env, value, "string");
-      if (err < 0) return err;
-    }
-
-    size_t len;
-    err = js_get_value_string_utf8(env, value, nullptr, 0, &len);
-    if (err < 0) return err;
-
-    len += 1 /* NULL */;
-    result = new utf8_t[len];
-
-    return js_get_value_string_utf8(env, value, result, len, nullptr);
   }
 };
 
@@ -2363,26 +2322,6 @@ struct js_type_info_t<utf16_t *> {
   marshall(js_env_t *env, utf16_t *value, js_value_t *&result) {
     return js_create_string_utf16le(env, value, size_t(-1), &result);
   }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, utf16_t *&result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_string>(env, value, "string");
-      if (err < 0) return err;
-    }
-
-    size_t len;
-    err = js_get_value_string_utf16le(env, value, nullptr, 0, &len);
-    if (err < 0) return err;
-
-    len += 1 /* NULL */;
-    result = new utf16_t[len];
-
-    return js_get_value_string_utf16le(env, value, result, len, nullptr);
-  }
 };
 
 template <>
@@ -2454,26 +2393,6 @@ struct js_type_info_t<char *> {
   marshall(js_env_t *env, char *value, js_value_t *&result) {
     return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), size_t(-1), &result);
   }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, char *&result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_string>(env, value, "string");
-      if (err < 0) return err;
-    }
-
-    size_t len;
-    err = js_get_value_string_utf8(env, value, nullptr, 0, &len);
-    if (err < 0) return err;
-
-    len += 1 /* NULL */;
-    result = new char[len];
-
-    return js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result), len, nullptr);
-  }
 };
 
 template <>
@@ -2486,39 +2405,6 @@ struct js_type_info_t<const char *> {
   static auto
   marshall(js_env_t *env, const char *value, js_value_t *&result) {
     return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), size_t(-1), &result);
-  }
-};
-
-template <>
-struct js_type_info_t<std::string> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_string;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::string &value, js_value_t *&result) {
-    return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value.data()), value.length(), &result);
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::string &result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_string>(env, value, "string");
-      if (err < 0) return err;
-    }
-
-    size_t len;
-    err = js_get_value_string_utf8(env, value, nullptr, 0, &len);
-    if (err < 0) return err;
-
-    result.reserve(len + 1 /* NULL */);
-    result.resize(len);
-
-    return js_get_value_string_utf8(env, value, reinterpret_cast<utf8_t *>(result.data()), result.capacity(), nullptr);
   }
 };
 
@@ -2597,293 +2483,24 @@ struct js_type_info_t<const T[N]> {
   }
 };
 
-template <typename T, size_t N>
-struct js_type_info_t<std::array<T, N>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::array<T, N> &array, js_value_t *&result) {
-    int err;
-
-    err = js_create_array_with_length(env, N, &result);
-    if (err < 0) return err;
-
-    js_value_t *values[N];
-
-    for (uint32_t i = 0; i < N; i++) {
-      err = js_type_info_t<T>::template marshall<options>(env, array[i], values[i]);
-      if (err < 0) return err;
-    }
-
-    return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values), N, 0);
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::array<T, N> &result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_array>(env, value, "array");
-      if (err < 0) return err;
-    }
-
-    js_value_t *values[N];
-    uint32_t len;
-    err = js_get_array_elements(env, value, values, N, 0, &len);
-    if (err < 0) return err;
-
-    assert(len == N);
-
-    for (uint32_t i = 0; i < N; i++) {
-      err = js_type_info_t<T>::template unmarshall<options>(env, values[i], result[i]);
-      if (err < 0) return err;
-    }
-
-    return 0;
-  }
-};
-
-template <typename T>
-struct js_type_info_t<std::vector<T>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::vector<T> &vector, js_value_t *&result) {
-    int err;
-
-    auto len = vector.size();
-
-    err = js_create_array_with_length(env, len, &result);
-    if (err < 0) return err;
-
-    std::vector<js_value_t *> values(len);
-
-    for (uint32_t i = 0; i < len; i++) {
-      err = js_type_info_t<T>::template marshall<options>(env, vector[i], values[i]);
-      if (err < 0) return err;
-    }
-
-    return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values.data()), len, 0);
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::vector<T> &result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_array>(env, value, "array");
-      if (err < 0) return err;
-    }
-
-    uint32_t len;
-    err = js_get_array_length(env, value, &len);
-    if (err < 0) return err;
-
-    std::vector<js_value_t *> values(len);
-    err = js_get_array_elements(env, value, values.data(), len, 0, &len);
-    if (err < 0) return err;
-
-    result.resize(len);
-
-    for (uint32_t i = 0; i < len; i++) {
-      err = js_type_info_t<T>::template unmarshall<options>(env, values[i], result[i]);
-      if (err < 0) return err;
-    }
-
-    return 0;
-  }
-};
-
-template <typename... T>
-struct js_type_info_t<std::tuple<T...>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options, size_t... I>
-  static auto
-  marshall(js_env_t *env, std::tuple<T...> &tuple, js_value_t *&result, std::index_sequence<I...>) {
-    int err;
-    err = js_create_array_with_length(env, sizeof...(T), &result);
-    if (err < 0) return err;
-
-    try {
-      js_value_t *values[] = {
-        js_marshall_untyped_value<options, T>(env, std::get<I>(tuple))...
-      };
-
-      return js_set_array_elements(env, result, const_cast<js_value_t *const *>(values), sizeof...(T), 0);
-    } catch (int err) {
-      return err;
-    }
-  }
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::tuple<T...> &tuple, js_value_t *&result) {
-    return marshall<options>(env, tuple, result, std::index_sequence_for<T...>());
-  }
-
-  template <js_type_options_t options, size_t... I>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::tuple<T...> &result, std::index_sequence<I...>) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_array>(env, value, "array");
-      if (err < 0) return err;
-    }
-
-    js_value_t *values[sizeof...(T)];
-    uint32_t len;
-    err = js_get_array_elements(env, value, values, sizeof...(T), 0, &len);
-    if (err < 0) return err;
-
-    assert(len == sizeof...(T));
-
-    try {
-      result = {
-        js_unmarshall_untyped_value<options, T>(env, values[I])...
-      };
-
-      return 0;
-    } catch (int err) {
-      return err;
-    }
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::tuple<T...> &result) {
-    return unmarshall<options>(env, value, result, std::index_sequence_for<T...>());
-  }
-};
-
-template <typename T>
-struct js_type_info_t<std::span<T>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::span<T> &view, js_value_t *&result) {
-    int err;
-
-    js_value_t *arraybuffer;
-
-    T *data;
-    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
-    if (err < 0) return err;
-
-    std::copy(view.begin(), view.end(), data);
-
-    return js_create_typedarray(env, js_typedarray_info_t<T>::type, view.size(), arraybuffer, 0, &result);
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::span<T> &result) {
-    int err;
-
-    if constexpr (options.checked) {
-      err = js_check_value<js_is_typedarray<T>>(env, value, js_typedarray_info_t<T>::label);
-      if (err < 0) return err;
-    }
-
-    T *data;
-    size_t len;
-    err = js_get_typedarray_info(env, value, nullptr, reinterpret_cast<void **>(&data), &len, nullptr, nullptr);
-    if (err < 0) return err;
-
-    result = std::span(data, len);
-
-    return 0;
-  }
-};
-
-template <typename T>
-struct js_type_info_t<std::span<const T>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, const std::span<const T> &view, js_value_t *&result) {
-    int err;
-
-    js_value_t *arraybuffer;
-
-    T *data;
-    err = js_create_arraybuffer(env, view.size_bytes(), reinterpret_cast<void **>(&data), &arraybuffer);
-    if (err < 0) return err;
-
-    std::copy(view.begin(), view.end(), data);
-
-    return js_create_typedarray(env, js_typedarray_info_t<T>::type, view.size(), arraybuffer, 0, &result);
-  }
-};
-
-template <typename T>
-struct js_type_info_t<std::optional<T>> {
-  using type = js_value_t *;
-
-  static constexpr auto signature = js_object;
-
-  template <js_type_options_t options>
-  static auto
-  marshall(js_env_t *env, std::optional<T> &value, js_value_t *&result) {
-    if (value) {
-      return js_type_info_t<T>::template marshall<options>(env, *value, result);
-    }
-
-    return js_get_undefined(env, &result);
-  }
-
-  template <js_type_options_t options>
-  static auto
-  unmarshall(js_env_t *env, js_value_t *value, std::optional<T> &result) {
-    int err;
-
-    bool is_undefined;
-    err = js_is_undefined(env, value, &is_undefined);
-    if (err < 0) return err;
-
-    if (is_undefined) {
-      result = std::nullopt;
-    } else {
-      T unmarshalled;
-      err = js_type_info_t<T>::template unmarshall<options>(env, value, unmarshalled);
-      if (err < 0) return err;
-
-      result = std::optional(unmarshalled);
-    }
-
-    return 0;
-  }
-};
-
 template <typename T>
 struct js_property_t {
-  js_property_t(const std::string &name, T value) : name_(name), value_(value) {}
+  js_property_t(const char *name, T value) : name_(name), len_(size_t(-1)), value_(value) {}
 
-  template <size_t N>
-  js_property_t(const char name[N], T value) : name_(name, N), value_(value) {}
+  js_property_t(const char *name, size_t len, T value) : name_(name), len_(len), value_(value) {}
 
-  js_property_t(const char *name, T value) : name_(name), value_(value) {}
+  template <typename S>
+    requires requires(const S &name) { name.data(); name.size(); }
+  js_property_t(const S &name, T value) : name_(name.data()), len_(name.size()), value_(value) {}
 
-  const std::string &
+  const char *
   name() const {
     return name_;
+  }
+
+  size_t
+  name_length() const {
+    return len_;
   }
 
   T
@@ -2892,110 +2509,43 @@ struct js_property_t {
   }
 
 private:
-  std::string name_;
+  const char *name_;
+  size_t len_;
   T value_;
 };
 
-template <typename T>
-static inline auto
-js_marshall_typed_value(T value) {
-  int err;
+template <js_type_options_t options, typename... T>
+static inline int
+js__marshall_untyped_values(js_env_t *env, js_value_t *result[], T... values) {
+  int err = 0;
 
-  typename js_type_info_t<T>::type result;
-  err = js_type_info_t<T>::marshall(value, result);
-  if (err < 0) throw err;
+  size_t i = 0;
 
-  return result;
+  if ((... || ((err = js_type_info_t<T>::template marshall<options>(env, values, result[i++])) < 0))) return err;
+
+  return 0;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_marshall_typed_value(js_env_t *env, T value) {
-  int err;
+template <js_type_options_t options, typename... A, size_t... I>
+static inline int
+js__unmarshall_untyped_values(js_env_t *env, js_value_t *const values[], js__tuple_t<A...> &result, js__index_sequence_t<I...>) {
+  int err = 0;
 
-  typename js_type_info_t<T>::type result;
-  err = js_type_info_t<T>::template marshall<options>(env, value, result);
-  if (err < 0) throw err;
+  if ((... || ((err = js_type_info_t<A>::template unmarshall<options>(env, values[I], js__get<I>(result))) < 0))) return err;
 
-  return result;
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_marshall_untyped_value(js_env_t *env, T value) {
-  int err;
-
-  js_value_t *result;
-  err = js_type_info_t<T>::template marshall<options>(env, value, result);
-  if (err < 0) throw err;
-
-  return result;
-}
-
-template <js_type_options_t options = js_type_options_t()>
-static inline auto
-js_marshall_untyped_value(js_env_t *env) {
-  int err;
-
-  js_value_t *result;
-  err = js_type_info_t<void>::template marshall<options>(env, result);
-  if (err < 0) throw err;
-
-  return result;
-}
-
-template <typename T>
-static inline auto
-js_unmarshall_typed_value(typename js_type_info_t<T>::type value) {
-  int err;
-
-  T result;
-  err = js_type_info_t<T>::unmarshall(value, result);
-  if (err < 0) throw err;
-
-  return result;
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_unmarshall_typed_value(js_env_t *env, typename js_type_info_t<T>::type value) {
-  int err;
-
-  T result;
-  err = js_type_info_t<T>::template unmarshall<options>(env, value, result);
-  if (err < 0) throw err;
-
-  return result;
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_unmarshall_untyped_value(js_env_t *env, js_value_t *value) {
-  int err;
-
-  T result;
-  err = js_type_info_t<T>::template unmarshall<options>(env, value, result);
-  if (err < 0) throw err;
-
-  return result;
-}
-
-template <js_type_options_t options = js_type_options_t(), typename... A, size_t... I>
-static inline auto
-js_unmarshall_untyped_values(js_env_t *env, js_value_t *const values[], std::index_sequence<I...>) {
-  return std::tuple<A...>{js_unmarshall_untyped_value<options, A>(env, values[I])...};
+  return 0;
 }
 
 template <typename...>
-struct js_argument_info_t;
+struct js__argument_info_t;
 
 template <>
-struct js_argument_info_t<> {
+struct js__argument_info_t<> {
   static constexpr bool has_receiver = false;
 };
 
 template <typename T, typename... R>
-struct js_argument_info_t<T, R...> {
+struct js__argument_info_t<T, R...> {
   static constexpr bool has_receiver = js_is_same<T, js_receiver_t>;
 };
 
@@ -3060,8 +2610,9 @@ struct js_function_options_t : js_type_options_t {
   constexpr js_function_options_t(bool scoped, js_function_statistics_t *statistics = nullptr) : scoped(scoped), statistics(statistics) {}
 };
 
+#if JS__EXCEPTIONS
 static inline std::string
-js_describe_exception(js_env_t *env, js_value_t *error) {
+js__describe_exception(js_env_t *env, js_value_t *error) {
   int err;
 
   js_value_t *string;
@@ -3088,7 +2639,7 @@ js_describe_exception(js_env_t *env, js_value_t *error) {
 }
 
 static inline js_persistent_t<js_handle_t>
-js_create_exception_reference(js_env_t *env, js_value_t *error) {
+js__create_exception_reference(js_env_t *env, js_value_t *error) {
   int err;
 
   js_ref_t *ref;
@@ -3102,8 +2653,8 @@ using js_pending_exception_t = decltype(js_pending_exception);
 
 struct js_exception_t : std::runtime_error {
   js_exception_t(js_env_t *env, js_value_t *error)
-      : std::runtime_error(js_describe_exception(env, error)),
-        error_(js_create_exception_reference(env, error)) {}
+      : std::runtime_error(js__describe_exception(env, error)),
+        error_(js__create_exception_reference(env, error)) {}
 
   js_handle_t
   get(js_env_t *env) const {
@@ -3120,15 +2671,15 @@ private:
   js_persistent_t<js_handle_t> error_;
 };
 
-constexpr js_type_tag_t js_native_exception_tag = {0x6a73746c2d657863, 0x6e61746976652d65};
+constexpr js_type_tag_t js__native_exception_tag = {0x6a73746c2d657863, 0x6e61746976652d65};
 
 static inline void
-js_finalize_native_exception(js_env_t *, void *data, void *) {
+js__finalize_native_exception(js_env_t *, void *data, void *) {
   delete static_cast<std::exception_ptr *>(data);
 }
 
 static inline std::exception_ptr
-js_get_native_exception(js_env_t *env, js_value_t *error) {
+js__get_native_exception(js_env_t *env, js_value_t *error) {
   int err;
 
   bool is_object;
@@ -3138,7 +2689,7 @@ js_get_native_exception(js_env_t *env, js_value_t *error) {
   if (!is_object) return nullptr;
 
   bool is_native;
-  err = js_check_type_tag(env, error, &js_native_exception_tag, &is_native);
+  err = js_check_type_tag(env, error, &js__native_exception_tag, &is_native);
   assert(err == 0);
 
   if (!is_native) return nullptr;
@@ -3151,7 +2702,7 @@ js_get_native_exception(js_env_t *env, js_value_t *error) {
 }
 
 static inline void
-js_check_exception(js_env_t *env) {
+js__check_exception(js_env_t *env) {
   int err;
 
   bool is_pending;
@@ -3164,7 +2715,7 @@ js_check_exception(js_env_t *env) {
   err = js_get_and_clear_last_exception(env, &error);
   assert(err == 0);
 
-  auto native_exception = js_get_native_exception(env, error);
+  auto native_exception = js__get_native_exception(env, error);
 
   if (native_exception) std::rethrow_exception(native_exception);
 
@@ -3172,7 +2723,7 @@ js_check_exception(js_env_t *env) {
 }
 
 static inline void
-js_throw_native_exception(js_env_t *env, int create(js_env_t *, js_value_t *, js_value_t *, js_value_t **), const char *message, std::exception_ptr exception) {
+js__throw_native_exception(js_env_t *env, int create(js_env_t *, js_value_t *, js_value_t *, js_value_t **), const char *message, std::exception_ptr exception) {
   int err;
 
   js_value_t *string;
@@ -3183,10 +2734,10 @@ js_throw_native_exception(js_env_t *env, int create(js_env_t *, js_value_t *, js
   err = create(env, nullptr, string, &error);
   if (err < 0) return;
 
-  err = js_add_type_tag(env, error, &js_native_exception_tag);
+  err = js_add_type_tag(env, error, &js__native_exception_tag);
   assert(err == 0);
 
-  err = js_wrap(env, error, new std::exception_ptr(std::move(exception)), js_finalize_native_exception, nullptr, nullptr);
+  err = js_wrap(env, error, new std::exception_ptr(std::move(exception)), js__finalize_native_exception, nullptr, nullptr);
   assert(err == 0);
 
   err = js_throw(env, error);
@@ -3194,7 +2745,7 @@ js_throw_native_exception(js_env_t *env, int create(js_env_t *, js_value_t *, js
 }
 
 static inline void
-js_throw_exception(js_env_t *env) {
+js__throw_exception(js_env_t *env) {
   int err;
 
   auto exception = std::current_exception();
@@ -3207,113 +2758,181 @@ js_throw_exception(js_env_t *env) {
     err = js_throw(env, static_cast<js_value_t *>(error.get(env)));
     assert(err == 0);
   } catch (const std::invalid_argument &error) {
-    js_throw_native_exception(env, js_create_type_error, error.what(), exception);
+    js__throw_native_exception(env, js_create_type_error, error.what(), exception);
   } catch (const std::out_of_range &error) {
-    js_throw_native_exception(env, js_create_range_error, error.what(), exception);
+    js__throw_native_exception(env, js_create_range_error, error.what(), exception);
   } catch (const std::exception &error) {
-    js_throw_native_exception(env, js_create_error, error.what(), exception);
+    js__throw_native_exception(env, js_create_error, error.what(), exception);
   } catch (...) {
     bool is_pending;
     err = js_is_exception_pending(env, &is_pending);
     assert(err == 0);
 
-    if (!is_pending) js_throw_native_exception(env, js_create_error, "Unknown native exception", exception);
+    if (!is_pending) js__throw_native_exception(env, js_create_error, "Unknown native exception", exception);
   }
 }
 
 static inline void
-js_throw_typed_exception(js_env_t *env) {
+js__throw_typed_exception(js_env_t *env) {
   int err;
 
   js_handle_scope_t *scope;
   err = js_open_handle_scope(env, &scope);
   assert(err == 0);
 
-  js_throw_exception(env);
+  js__throw_exception(env);
 
   err = js_close_handle_scope(env, scope);
   assert(err == 0);
 }
+#endif
 
-static inline void
-js_throw_typed_exception(js_typed_callback_info_t *info) {
+template <bool is_noexcept, bool is_typed, typename F, typename E>
+static inline auto
+js__try(F fn, E get_env) noexcept -> decltype(fn()) {
+#if JS__EXCEPTIONS
+  if constexpr (!is_noexcept) {
+    try {
+      return fn();
+    } catch (...) {
+      if constexpr (is_typed) {
+        js__throw_typed_exception(get_env());
+      } else {
+        js__throw_exception(get_env());
+      }
+
+      return decltype(fn())();
+    }
+  }
+#else
+  (void) get_env;
+#endif
+
+  return fn();
+}
+
+template <typename... A, size_t... I>
+static inline int
+js__unmarshall_typed_values(js__tuple_t<A...> &result, js__index_sequence_t<I...>, typename js_type_info_t<A>::type... values) {
+  int err = 0;
+
+  if ((... || ((err = js_type_info_t<A>::unmarshall(values, js__get<I>(result))) < 0))) return err;
+
+  return 0;
+}
+
+template <js_type_options_t options, typename... A, size_t... I>
+static inline int
+js__unmarshall_typed_values(js_env_t *env, js__tuple_t<A...> &result, js__index_sequence_t<I...>, typename js_type_info_t<A>::type... values) {
+  int err = 0;
+
+  if ((... || ((err = js_type_info_t<A>::template unmarshall<options>(env, values, js__get<I>(result))) < 0))) return err;
+
+  return 0;
+}
+
+static inline js_env_t *
+js__get_typed_callback_env(js_typed_callback_info_t *info) {
   int err;
 
   js_env_t *env;
   err = js_get_typed_callback_info(info, &env, nullptr);
   assert(err == 0);
 
-  js_throw_typed_exception(env);
+  return env;
 }
 
 template <auto fn>
-struct js_typed_callback_t;
+struct js__typed_callback_t;
 
 template <typename R, typename... A, R fn(A...)>
-struct js_typed_callback_t<fn> {
+struct js__typed_callback_t<fn> {
+  using result_t = typename js_type_info_t<R>::type;
+
   template <js_function_options_t options>
   static auto
   create() {
-    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> typename js_type_info_t<R>::type {
+    return create<options>(js__index_sequence_for_t<A...>());
+  }
+
+private:
+  template <js_function_options_t options, size_t... I>
+  static auto
+  create(js__index_sequence_t<I...>) {
+    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> result_t {
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      try {
-        return js_marshall_typed_value<R>(fn(js_unmarshall_typed_value<A>(std::move(args))...));
-      } catch (...) {
-        js_throw_typed_exception(info);
+      js__tuple_t<A...> values;
+      if (js__unmarshall_typed_values(values, js__index_sequence_t<I...>(), js__move(args)...) < 0) return {};
 
-        return {};
-      }
+      return js__try<js_is_noexcept<decltype(fn)>, true>(
+        [&]() -> result_t {
+          R value = fn(js__move(js__get<I>(values))...);
+
+          result_t result;
+          if (js_type_info_t<R>::marshall(value, result) < 0) return {};
+
+          return result;
+        },
+        [&] { return js__get_typed_callback_env(info); }
+      );
     };
   }
 };
 
 template <typename R, typename... A, R fn(js_env_t *, A...)>
-struct js_typed_callback_t<fn> {
+struct js__typed_callback_t<fn> {
+  using result_t = typename js_type_info_t<R>::type;
+
   template <js_function_options_t options>
   static auto
   create() {
     if constexpr (options.scoped) {
-      if constexpr (js_is_same<typename js_type_info_t<R>::type, js_value_t *>) {
-        return create_with_escapable_scope<options>();
+      if constexpr (js_is_same<result_t, js_value_t *>) {
+        return create_with_escapable_scope<options>(js__index_sequence_for_t<A...>());
       } else {
-        return create_with_scope<options>();
+        return create_with_scope<options>(js__index_sequence_for_t<A...>());
       }
     } else {
-      return create_without_scope<options>();
+      return create_without_scope<options>(js__index_sequence_for_t<A...>());
     }
   }
 
 private:
-  template <js_function_options_t options>
-  static typename js_type_info_t<R>::type
-  call(js_env_t *env, typename js_type_info_t<A>::type... args) noexcept {
-    try {
-      return js_marshall_typed_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...));
-    } catch (...) {
-      js_throw_typed_exception(env);
+  template <js_function_options_t options, size_t... I>
+  static result_t
+  call(js_env_t *env, js__index_sequence_t<I...>, typename js_type_info_t<A>::type... args) noexcept {
+    js__tuple_t<A...> values;
+    if (js__unmarshall_typed_values<js_type_options_t(options)>(env, values, js__index_sequence_t<I...>(), js__move(args)...) < 0) return {};
 
-      return {};
-    }
+    return js__try<js_is_noexcept<decltype(fn)>, true>(
+      [&]() -> result_t {
+        R value = fn(env, js__move(js__get<I>(values))...);
+
+        result_t result;
+        if (js_type_info_t<R>::template marshall<js_type_options_t(options)>(env, value, result) < 0) return {};
+
+        return result;
+      },
+      [&] { return env; }
+    );
   }
 
-  template <js_function_options_t options>
+  template <js_function_options_t options, size_t... I>
   static auto
-  create_with_scope() {
-    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> typename js_type_info_t<R>::type {
+  create_with_scope(js__index_sequence_t<I...>) {
+    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> result_t {
       int err;
 
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      js_env_t *env;
-      err = js_get_typed_callback_info(info, &env, nullptr);
-      assert(err == 0);
+      auto env = js__get_typed_callback_env(info);
 
       js_handle_scope_t *scope;
       err = js_open_handle_scope(env, &scope);
       assert(err == 0);
 
-      auto result = call<options>(env, std::move(args)...);
+      auto result = call<options>(env, js__index_sequence_t<I...>(), js__move(args)...);
 
       err = js_close_handle_scope(env, scope);
       assert(err == 0);
@@ -3322,23 +2941,21 @@ private:
     };
   }
 
-  template <js_function_options_t options>
+  template <js_function_options_t options, size_t... I>
   static auto
-  create_with_escapable_scope() {
-    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> typename js_type_info_t<R>::type {
+  create_with_escapable_scope(js__index_sequence_t<I...>) {
+    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> result_t {
       int err;
 
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      js_env_t *env;
-      err = js_get_typed_callback_info(info, &env, nullptr);
-      assert(err == 0);
+      auto env = js__get_typed_callback_env(info);
 
       js_escapable_handle_scope_t *scope;
       err = js_open_escapable_handle_scope(env, &scope);
       assert(err == 0);
 
-      auto result = call<options>(env, std::move(args)...);
+      auto result = call<options>(env, js__index_sequence_t<I...>(), js__move(args)...);
 
       if (result) {
         err = js_escape_handle(env, scope, result, &result);
@@ -3352,376 +2969,261 @@ private:
     };
   }
 
-  template <js_function_options_t options>
+  template <js_function_options_t options, size_t... I>
   static auto
-  create_without_scope() {
-    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> typename js_type_info_t<R>::type {
-      int err;
-
+  create_without_scope(js__index_sequence_t<I...>) {
+    return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> result_t {
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      js_env_t *env;
-      err = js_get_typed_callback_info(info, &env, nullptr);
-      assert(err == 0);
-
-      return call<options>(env, std::move(args)...);
+      return call<options>(js__get_typed_callback_env(info), js__index_sequence_t<I...>(), js__move(args)...);
     };
   }
 };
 
 template <typename... A, void fn(A...)>
-struct js_typed_callback_t<fn> {
+struct js__typed_callback_t<fn> {
   template <js_function_options_t options>
   static auto
   create() {
+    return create<options>(js__index_sequence_for_t<A...>());
+  }
+
+private:
+  template <js_function_options_t options, size_t... I>
+  static auto
+  create(js__index_sequence_t<I...>) {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> void {
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      try {
-        fn(js_unmarshall_typed_value<A>(std::move(args))...);
-      } catch (...) {
-        js_throw_typed_exception(info);
-      }
+      js__tuple_t<A...> values;
+      if (js__unmarshall_typed_values(values, js__index_sequence_t<I...>(), js__move(args)...) < 0) return;
+
+      js__try<js_is_noexcept<decltype(fn)>, true>(
+        [&] { fn(js__move(js__get<I>(values))...); },
+        [&] { return js__get_typed_callback_env(info); }
+      );
     };
   }
 };
 
 template <typename... A, void fn(js_env_t *, A...)>
-struct js_typed_callback_t<fn> {
+struct js__typed_callback_t<fn> {
   template <js_function_options_t options>
   static auto
   create() {
     if constexpr (options.scoped) {
-      return create_with_scope<options>();
+      return create_with_scope<options>(js__index_sequence_for_t<A...>());
     } else {
-      return create_without_scope<options>();
+      return create_without_scope<options>(js__index_sequence_for_t<A...>());
     }
   }
 
 private:
-  template <js_function_options_t options>
+  template <js_function_options_t options, size_t... I>
   static void
-  call(js_env_t *env, typename js_type_info_t<A>::type... args) noexcept {
-    try {
-      fn(env, js_unmarshall_typed_value<js_type_options_t(options), A>(env, std::move(args))...);
-    } catch (...) {
-      js_throw_typed_exception(env);
-    }
+  call(js_env_t *env, js__index_sequence_t<I...>, typename js_type_info_t<A>::type... args) noexcept {
+    js__tuple_t<A...> values;
+    if (js__unmarshall_typed_values<js_type_options_t(options)>(env, values, js__index_sequence_t<I...>(), js__move(args)...) < 0) return;
+
+    js__try<js_is_noexcept<decltype(fn)>, true>(
+      [&] { fn(env, js__move(js__get<I>(values))...); },
+      [&] { return env; }
+    );
   }
 
-  template <js_function_options_t options>
+  template <js_function_options_t options, size_t... I>
   static auto
-  create_with_scope() {
+  create_with_scope(js__index_sequence_t<I...>) {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> void {
       int err;
 
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      js_env_t *env;
-      err = js_get_typed_callback_info(info, &env, nullptr);
-      assert(err == 0);
+      auto env = js__get_typed_callback_env(info);
 
       js_handle_scope_t *scope;
       err = js_open_handle_scope(env, &scope);
       assert(err == 0);
 
-      call<options>(env, std::move(args)...);
+      call<options>(env, js__index_sequence_t<I...>(), js__move(args)...);
 
       err = js_close_handle_scope(env, scope);
       assert(err == 0);
     };
   }
 
-  template <js_function_options_t options>
+  template <js_function_options_t options, size_t... I>
   static auto
-  create_without_scope() {
+  create_without_scope(js__index_sequence_t<I...>) {
     return +[](typename js_type_info_t<A>::type... args, js_typed_callback_info_t *info) noexcept -> void {
-      int err;
-
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::typed});
 
-      js_env_t *env;
-      err = js_get_typed_callback_info(info, &env, nullptr);
-      assert(err == 0);
-
-      call<options>(env, std::move(args)...);
+      call<options>(js__get_typed_callback_env(info), js__index_sequence_t<I...>(), js__move(args)...);
     };
   }
 };
 
+template <typename... A>
+static inline void
+js__get_callback_arguments(js_env_t *env, js_callback_info_t *info, js_value_t *argv[]) {
+  int err;
+
+  size_t argc = sizeof...(A);
+
+  if constexpr (js__argument_info_t<A...>::has_receiver) {
+    argc--;
+
+    err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
+    assert(err == 0);
+
+    argc++;
+  } else {
+    err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
+    assert(err == 0);
+  }
+
+  assert(argc == sizeof...(A));
+}
+
 template <auto fn, bool is_noexcept = js_is_noexcept<decltype(fn)>>
-struct js_untyped_callback_t;
+struct js__untyped_callback_t;
 
 template <typename R, typename... A, R fn(A...), bool is_noexcept>
-struct js_untyped_callback_t<fn, is_noexcept> {
+struct js__untyped_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
-    return create<options>(std::index_sequence_for<A...>());
+    return create<options>(js__index_sequence_for_t<A...>());
   }
 
 private:
   template <js_function_options_t options, size_t... I>
-  static js_value_t *
-  call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
-    if constexpr (is_noexcept) {
-      int err;
-
-      std::tuple<A...> args;
-
-      try {
-        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
-      } catch (int) {
-        return nullptr;
-      }
-
-      R value = fn(std::move(std::get<I>(args))...);
-
-      js_value_t *result;
-      err = js_type_info_t<R>::template marshall<js_type_options_t(options)>(env, value, result);
-      if (err < 0) return nullptr;
-
-      return result;
-    } else {
-      try {
-        return js_marshall_untyped_value<js_type_options_t(options), R>(env, fn(js_unmarshall_untyped_value<js_type_options_t(options), A>(env, argv[I])...));
-      } catch (...) {
-        js_throw_exception(env);
-
-        return nullptr;
-      }
-    }
-  }
-
-  template <js_function_options_t options, size_t... I>
   static auto
-  create(std::index_sequence<I...>) {
+  create(js__index_sequence_t<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
-      int err;
-
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
-      size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
+      js__get_callback_arguments<A...>(env, info, argv);
 
-      if constexpr (js_argument_info_t<A...>::has_receiver) {
-        argc--;
+      js__tuple_t<A...> args;
+      if (js__unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, js__index_sequence_t<I...>()) < 0) return nullptr;
 
-        err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
-        assert(err == 0);
+      return js__try<is_noexcept, false>(
+        [&]() -> js_value_t * {
+          R value = fn(js__move(js__get<I>(args))...);
 
-        argc++;
-      } else {
-        err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
-        assert(err == 0);
-      }
+          js_value_t *result;
+          if (js_type_info_t<R>::template marshall<js_type_options_t(options)>(env, value, result) < 0) return nullptr;
 
-      assert(argc == sizeof...(A));
-
-      return call<options>(env, argv, std::index_sequence<I...>());
+          return result;
+        },
+        [&] { return env; }
+      );
     };
   }
 };
 
 template <typename R, typename... A, R fn(js_env_t *, A...), bool is_noexcept>
-struct js_untyped_callback_t<fn, is_noexcept> {
+struct js__untyped_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
     // V8 opens a handle scope around every call to a native function on this
     // path and closes it when the function returns, releasing every handle the
     // call created.
-    return create<options>(std::index_sequence_for<A...>());
+    return create<options>(js__index_sequence_for_t<A...>());
   }
 
 private:
   template <js_function_options_t options, size_t... I>
-  static js_value_t *
-  call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
-    if constexpr (is_noexcept) {
-      int err;
-
-      std::tuple<A...> args;
-
-      try {
-        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
-      } catch (int) {
-        return nullptr;
-      }
-
-      R value = fn(env, std::move(std::get<I>(args))...);
-
-      js_value_t *result;
-      err = js_type_info_t<R>::template marshall<js_type_options_t(options)>(env, value, result);
-      if (err < 0) return nullptr;
-
-      return result;
-    } else {
-      try {
-        return js_marshall_untyped_value<js_type_options_t(options), R>(env, fn(env, js_unmarshall_untyped_value<js_type_options_t(options), A>(env, argv[I])...));
-      } catch (...) {
-        js_throw_exception(env);
-
-        return nullptr;
-      }
-    }
-  }
-
-  template <js_function_options_t options, size_t... I>
   static auto
-  create(std::index_sequence<I...>) {
+  create(js__index_sequence_t<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
-      int err;
-
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
-      size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
+      js__get_callback_arguments<A...>(env, info, argv);
 
-      if constexpr (js_argument_info_t<A...>::has_receiver) {
-        argc--;
+      js__tuple_t<A...> args;
+      if (js__unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, js__index_sequence_t<I...>()) < 0) return nullptr;
 
-        err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
-        assert(err == 0);
+      return js__try<is_noexcept, false>(
+        [&]() -> js_value_t * {
+          R value = fn(env, js__move(js__get<I>(args))...);
 
-        argc++;
-      } else {
-        err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
-        assert(err == 0);
-      }
+          js_value_t *result;
+          if (js_type_info_t<R>::template marshall<js_type_options_t(options)>(env, value, result) < 0) return nullptr;
 
-      assert(argc == sizeof...(A));
-
-      return call<options>(env, argv, std::index_sequence<I...>());
+          return result;
+        },
+        [&] { return env; }
+      );
     };
   }
 };
 
 template <typename... A, void fn(A...), bool is_noexcept>
-struct js_untyped_callback_t<fn, is_noexcept> {
+struct js__untyped_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
-    return create<options>(std::index_sequence_for<A...>());
+    return create<options>(js__index_sequence_for_t<A...>());
   }
 
 private:
   template <js_function_options_t options, size_t... I>
-  static void
-  call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
-    if constexpr (is_noexcept) {
-      std::tuple<A...> args;
-
-      try {
-        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
-      } catch (int) {
-        return;
-      }
-
-      fn(std::move(std::get<I>(args))...);
-    } else {
-      try {
-        fn(js_unmarshall_untyped_value<js_type_options_t(options), A>(env, argv[I])...);
-      } catch (...) {
-        js_throw_exception(env);
-      }
-    }
-  }
-
-  template <js_function_options_t options, size_t... I>
   static auto
-  create(std::index_sequence<I...>) {
+  create(js__index_sequence_t<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
-      int err;
-
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
-      size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
+      js__get_callback_arguments<A...>(env, info, argv);
 
-      if constexpr (js_argument_info_t<A...>::has_receiver) {
-        argc--;
+      js__tuple_t<A...> args;
+      if (js__unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, js__index_sequence_t<I...>()) < 0) return nullptr;
 
-        err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
-        assert(err == 0);
+      js__try<is_noexcept, false>(
+        [&] { fn(js__move(js__get<I>(args))...); },
+        [&] { return env; }
+      );
 
-        argc++;
-      } else {
-        err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
-        assert(err == 0);
-      }
-
-      assert(argc == sizeof...(A));
-
-      call<options>(env, argv, std::index_sequence<I...>());
-
-      return js_marshall_untyped_value<js_type_options_t(options)>(env);
+      return nullptr;
     };
   }
 };
 
 template <typename... A, void fn(js_env_t *, A...), bool is_noexcept>
-struct js_untyped_callback_t<fn, is_noexcept> {
+struct js__untyped_callback_t<fn, is_noexcept> {
   template <js_function_options_t options>
   static auto
   create() {
     // V8 opens a handle scope around every call to a native function on this
     // path and closes it when the function returns, releasing every handle the
     // call created.
-    return create<options>(std::index_sequence_for<A...>());
+    return create<options>(js__index_sequence_for_t<A...>());
   }
 
 private:
   template <js_function_options_t options, size_t... I>
-  static void
-  call(js_env_t *env, js_value_t *const argv[], std::index_sequence<I...>) noexcept {
-    if constexpr (is_noexcept) {
-      std::tuple<A...> args;
-
-      try {
-        args = js_unmarshall_untyped_values<js_type_options_t(options), A...>(env, argv, std::index_sequence<I...>());
-      } catch (int) {
-        return;
-      }
-
-      fn(env, std::move(std::get<I>(args))...);
-    } else {
-      try {
-        fn(env, js_unmarshall_untyped_value<js_type_options_t(options), A>(env, argv[I])...);
-      } catch (...) {
-        js_throw_exception(env);
-      }
-    }
-  }
-
-  template <js_function_options_t options, size_t... I>
   static auto
-  create(std::index_sequence<I...>) {
+  create(js__index_sequence_t<I...>) {
     return +[](js_env_t *env, js_callback_info_t *info) noexcept -> js_value_t * {
-      int err;
-
       if constexpr (options.statistics) options.statistics->event({js_function_call_t::untyped});
 
-      size_t argc = sizeof...(A);
       js_value_t *argv[sizeof...(A)];
+      js__get_callback_arguments<A...>(env, info, argv);
 
-      if constexpr (js_argument_info_t<A...>::has_receiver) {
-        argc--;
+      js__tuple_t<A...> args;
+      if (js__unmarshall_untyped_values<js_type_options_t(options)>(env, argv, args, js__index_sequence_t<I...>()) < 0) return nullptr;
 
-        err = js_get_callback_info(env, info, &argc, &argv[1], &argv[0], nullptr);
-        assert(err == 0);
+      js__try<is_noexcept, false>(
+        [&] { fn(env, js__move(js__get<I>(args))...); },
+        [&] { return env; }
+      );
 
-        argc++;
-      } else {
-        err = js_get_callback_info(env, info, &argc, argv, nullptr, nullptr);
-        assert(err == 0);
-      }
-
-      assert(argc == sizeof...(A));
-
-      call<options>(env, argv, std::index_sequence<I...>());
-
-      return js_marshall_untyped_value<js_type_options_t(options)>(env);
+      return nullptr;
     };
   }
 };
@@ -3729,22 +3231,22 @@ private:
 template <auto fn, js_function_options_t options = js_function_options_t()>
 static inline auto
 js_create_typed_callback() {
-  return js_typed_callback_t<fn>::template create<options>();
+  return js__typed_callback_t<fn>::template create<options>();
 }
 
 template <auto fn, js_function_options_t options = js_function_options_t(), bool is_noexcept = js_is_noexcept<decltype(fn)>>
 static inline auto
 js_create_untyped_callback() {
-  return js_untyped_callback_t<fn, is_noexcept>::template create<options>();
+  return js__untyped_callback_t<fn, is_noexcept>::template create<options>();
 }
 
 constexpr bool
-js_is_handle_signature(int signature) {
+js__is_handle_signature(int signature) {
   return signature == js_null || signature == js_number || signature == js_string || signature == js_symbol || signature == js_object || signature == js_function || signature == js_bigint;
 }
 
 template <typename T>
-constexpr bool js_has_consistent_signature = !js_is_same<typename js_type_info_t<T>::type, js_value_t *> || js_is_handle_signature(js_type_info_t<T>::signature);
+constexpr bool js__has_consistent_signature = !js_is_same<typename js_type_info_t<T>::type, js_value_t *> || js__is_handle_signature(js_type_info_t<T>::signature);
 
 template <auto fn, bool is_noexcept = js_is_noexcept<decltype(fn)>>
 struct js_function_info_t;
@@ -3760,7 +3262,7 @@ struct js_function_info_t<fn, is_noexcept> {
 
     auto untyped = js_create_untyped_callback<fn, options, is_noexcept>();
 
-    static_assert(js_has_consistent_signature<R> && (js_has_consistent_signature<A> && ...), "A handle type must report a handle signature");
+    static_assert(js__has_consistent_signature<R> && (js__has_consistent_signature<A> && ...), "A handle type must report a handle signature");
 
     js_callback_signature_t signature;
 
@@ -3802,7 +3304,7 @@ struct js_function_info_t<fn, is_noexcept> {
 
     auto untyped = js_create_untyped_callback<fn, options, is_noexcept>();
 
-    static_assert(js_has_consistent_signature<R> && (js_has_consistent_signature<A> && ...), "A handle type must report a handle signature");
+    static_assert(js__has_consistent_signature<R> && (js__has_consistent_signature<A> && ...), "A handle type must report a handle signature");
 
     js_callback_signature_t signature;
 
@@ -4006,8 +3508,8 @@ js_create_function(js_env_t *env, const char *name, size_t len, typename js_func
 
 template <auto fn, js_function_options_t options = js_function_options_t()>
 static inline auto
-js_create_function(js_env_t *env, const std::string &name, typename js_function_info_t<fn>::type &result) {
-  return js_function_info_t<fn>::template marshall<options>(env, name.data(), name.size(), result);
+js_create_function(js_env_t *env, const char *name, typename js_function_info_t<fn>::type &result) {
+  return js_function_info_t<fn>::template marshall<options>(env, name, size_t(-1), result);
 }
 
 template <auto fn, js_function_options_t options = js_function_options_t()>
@@ -4024,8 +3526,8 @@ js_create_function(js_env_t *env, const char *name, size_t len, js_handle_t &res
 
 template <auto fn, js_function_options_t options = js_function_options_t()>
 static inline auto
-js_create_function(js_env_t *env, std::string name, js_handle_t &result) {
-  return js_function_info_t<fn>::template marshall<options>(env, name.data(), name.length(), result);
+js_create_function(js_env_t *env, const char *name, js_handle_t &result) {
+  return js_function_info_t<fn>::template marshall<options>(env, name, size_t(-1), result);
 }
 
 template <auto fn, js_function_options_t options = js_function_options_t()>
@@ -4034,34 +3536,30 @@ js_create_function(js_env_t *env, js_handle_t &result) {
   return js_function_info_t<fn>::template marshall<options>(env, nullptr, 0, result);
 }
 
+template <js_type_options_t options, typename... A>
+static inline int
+js__call_function(js_env_t *env, int call(js_env_t *, js_value_t *, js_value_t *, size_t, js_value_t *const[], js_value_t **), js_value_t *function, js_value_t **result, A... args) {
+  int err;
+
+  js_value_t *argv[sizeof...(A)];
+  err = js__marshall_untyped_values<options, A...>(env, argv, js__move(args)...);
+  if (err < 0) return err;
+
+  if constexpr (js__argument_info_t<A...>::has_receiver) {
+    return call(env, argv[0], function, sizeof...(A) - 1, &argv[1], result);
+  } else {
+    js_value_t *receiver;
+    err = js_get_global(env, &receiver);
+    assert(err == 0);
+
+    return call(env, receiver, function, sizeof...(A), argv, result);
+  }
+}
+
 template <js_type_options_t options = js_type_options_t(), typename... A>
 static inline auto
 js_call_function(js_env_t *env, const js_function_t<void, A...> &function, A... args) {
-  int err;
-
-  size_t argc = sizeof...(A);
-
-  try {
-    js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, std::move(args))...
-    };
-
-    js_value_t *receiver;
-
-    size_t offset = 0;
-
-    if constexpr (js_argument_info_t<A...>::has_receiver) {
-      receiver = argv[0];
-      offset = 1;
-    } else {
-      err = js_get_global(env, &receiver);
-      assert(err == 0);
-    }
-
-    return js_call_function(env, receiver, static_cast<js_value_t *>(function), argc - offset, &argv[offset], nullptr);
-  } catch (int err) {
-    return err;
-  }
+  return js__call_function<options, A...>(env, js_call_function, static_cast<js_value_t *>(function), nullptr, js__move(args)...);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename R, typename... A>
@@ -4069,65 +3567,17 @@ static inline auto
 js_call_function(js_env_t *env, const js_function_t<R, A...> &function, A... args, R &result) {
   int err;
 
-  size_t argc = sizeof...(A);
+  js_value_t *value;
+  err = js__call_function<options, A...>(env, js_call_function, static_cast<js_value_t *>(function), &value, js__move(args)...);
+  if (err < 0) return err;
 
-  try {
-    js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, std::move(args))...
-    };
-
-    js_value_t *receiver;
-
-    size_t offset = 0;
-
-    if constexpr (js_argument_info_t<A...>::has_receiver) {
-      receiver = argv[0];
-      offset = 1;
-    } else {
-      err = js_get_global(env, &receiver);
-      assert(err == 0);
-    }
-
-    js_value_t *value;
-    err = js_call_function(env, receiver, static_cast<js_value_t *>(function), argc - offset, &argv[offset], &value);
-    if (err < 0) return err;
-
-    result = js_unmarshall_untyped_value<options, R>(env, value);
-
-    return 0;
-  } catch (int err) {
-    return err;
-  }
+  return js_type_info_t<R>::template unmarshall<options>(env, value, result);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename... A>
 static inline auto
 js_call_function_with_checkpoint(js_env_t *env, const js_function_t<void, A...> &function, A... args) {
-  int err;
-
-  size_t argc = sizeof...(A);
-
-  try {
-    js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, std::move(args))...
-    };
-
-    js_value_t *receiver;
-
-    size_t offset = 0;
-
-    if constexpr (js_argument_info_t<A...>::has_receiver) {
-      receiver = argv[0];
-      offset = 1;
-    } else {
-      err = js_get_global(env, &receiver);
-      assert(err == 0);
-    }
-
-    return js_call_function_with_checkpoint(env, receiver, static_cast<js_value_t *>(function), argc - offset, &argv[offset], nullptr);
-  } catch (int err) {
-    return err;
-  }
+  return js__call_function<options, A...>(env, js_call_function_with_checkpoint, static_cast<js_value_t *>(function), nullptr, js__move(args)...);
 }
 
 template <js_type_options_t options = js_type_options_t(), typename R, typename... A>
@@ -4135,35 +3585,11 @@ static inline auto
 js_call_function_with_checkpoint(js_env_t *env, const js_function_t<R, A...> &function, A... args, R &result) {
   int err;
 
-  size_t argc = sizeof...(A);
+  js_value_t *value;
+  err = js__call_function<options, A...>(env, js_call_function_with_checkpoint, static_cast<js_value_t *>(function), &value, js__move(args)...);
+  if (err < 0) return err;
 
-  try {
-    js_value_t *argv[] = {
-      js_marshall_untyped_value<options, A>(env, std::move(args))...
-    };
-
-    js_value_t *receiver;
-
-    size_t offset = 0;
-
-    if constexpr (js_argument_info_t<A...>::has_receiver) {
-      receiver = argv[0];
-      offset = 1;
-    } else {
-      err = js_get_global(env, &receiver);
-      assert(err == 0);
-    }
-
-    js_value_t *value;
-    err = js_call_function_with_checkpoint(env, receiver, static_cast<js_value_t *>(function), argc - offset, &argv[offset], &value);
-    if (err < 0) return err;
-
-    result = js_unmarshall_untyped_value<options, R>(env, value);
-
-    return 0;
-  } catch (int err) {
-    return err;
-  }
+  return js_type_info_t<R>::template unmarshall<options>(env, value, result);
 }
 
 static inline auto
@@ -4201,26 +3627,6 @@ js_create_array(js_env_t *env, const T values[N], js_array_t &result) {
   return js_set_array_elements(env, result, values);
 }
 
-template <typename T, size_t N>
-static inline auto
-js_create_array(js_env_t *env, const std::array<T, N> values, js_array_t &result) {
-  int err;
-  err = js_create_array(env, N, result);
-  if (err < 0) return err;
-
-  return js_set_array_elements(env, result, values);
-}
-
-template <typename T>
-static inline auto
-js_create_array(js_env_t *env, const std::vector<T> values, js_array_t &result) {
-  int err;
-  err = js_create_array(env, values.size(), result);
-  if (err < 0) return err;
-
-  return js_set_array_elements(env, result, values);
-}
-
 static inline auto
 js_create_bigint(js_env_t *env, int64_t value, js_bigint_t &result) {
   return js_create_bigint_int64(env, value, static_cast<js_value_t **>(result));
@@ -4231,20 +3637,14 @@ js_create_bigint(js_env_t *env, uint64_t value, js_bigint_t &result) {
   return js_create_bigint_uint64(env, value, static_cast<js_value_t **>(result));
 }
 
-template <size_t N>
 static inline auto
-js_create_string(js_env_t *env, const char value[N], js_string_t &result) {
-  return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), N, static_cast<js_value_t **>(result));
+js_create_string(js_env_t *env, const char *value, js_string_t &result) {
+  return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value), size_t(-1), static_cast<js_value_t **>(result));
 }
 
 static inline auto
 js_create_string(js_env_t *env, const utf8_t *value, size_t len, js_string_t &result) {
   return js_create_string_utf8(env, value, len, static_cast<js_value_t **>(result));
-}
-
-static inline auto
-js_create_string(js_env_t *env, const std::string &value, js_string_t &result) {
-  return js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(value.data()), value.length(), static_cast<js_value_t **>(result));
 }
 
 template <typename T>
@@ -4272,20 +3672,6 @@ js_create_arraybuffer(js_env_t *env, size_t len, js_arraybuffer_t &result) {
 
 template <typename T>
 static inline auto
-js_create_arraybuffer(js_env_t *env, size_t len, std::span<T> &view, js_arraybuffer_t &result) {
-  int err;
-
-  T *data;
-  err = js_create_arraybuffer(env, len, data, result);
-  if (err < 0) return err;
-
-  view = std::span(data, len);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
 js_create_arraybuffer(js_env_t *env, const T *data, size_t len, js_arraybuffer_t &result) {
   int err;
 
@@ -4293,7 +3679,7 @@ js_create_arraybuffer(js_env_t *env, const T *data, size_t len, js_arraybuffer_t
   err = js_create_arraybuffer(env, len, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + len, view);
+  js__copy(data, data + len, view);
 
   return 0;
 }
@@ -4307,49 +3693,7 @@ js_create_arraybuffer(js_env_t *env, const T data[N], js_arraybuffer_t &result) 
   err = js_create_arraybuffer(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + N, view);
-
-  return 0;
-}
-
-template <typename T, size_t N>
-static inline auto
-js_create_arraybuffer(js_env_t *env, const std::array<T, N> data, js_arraybuffer_t &result) {
-  int err;
-
-  T *view;
-  err = js_create_arraybuffer(env, N, view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_create_arraybuffer(js_env_t *env, const std::span<T> &data, js_arraybuffer_t &result) {
-  int err;
-
-  T *view;
-  err = js_create_arraybuffer(env, data.size(), view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_create_arraybuffer(js_env_t *env, const std::vector<T> &data, js_arraybuffer_t &result) {
-  int err;
-
-  T *view;
-  err = js_create_arraybuffer(env, data.size(), view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
+  js__copy(data, data + N, view);
 
   return 0;
 }
@@ -4425,30 +3769,6 @@ js_create_typedarray(js_env_t *env, size_t len, T *&data, js_typedarray_t<> &res
 
 template <js_typedarray_element T>
 static inline auto
-js_create_typedarray(js_env_t *env, size_t len, std::span<T> &view, js_typedarray_t<T> &result) {
-  int err;
-
-  js_arraybuffer_t arraybuffer;
-  err = js_create_arraybuffer(env, len, view, arraybuffer);
-  if (err < 0) return err;
-
-  return js_create_typedarray(env, len, arraybuffer, result);
-}
-
-template <typename T>
-static inline auto
-js_create_typedarray(js_env_t *env, size_t len, std::span<T> &view, js_typedarray_t<> &result) {
-  int err;
-
-  js_arraybuffer_t arraybuffer;
-  err = js_create_arraybuffer(env, len, view, arraybuffer);
-  if (err < 0) return err;
-
-  return js_create_typedarray(env, len * sizeof(T), arraybuffer, result);
-}
-
-template <js_typedarray_element T>
-static inline auto
 js_create_typedarray(js_env_t *env, size_t len, js_typedarray_t<T> &result) {
   int err;
 
@@ -4491,7 +3811,7 @@ js_create_typedarray(js_env_t *env, const T *data, size_t len, js_typedarray_t<T
   err = js_create_typedarray(env, len, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + len, view);
+  js__copy(data, data + len, view);
 
   return 0;
 }
@@ -4505,7 +3825,7 @@ js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<T> &result)
   err = js_create_typedarray(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + N, view);
+  js__copy(data, data + N, view);
 
   return 0;
 }
@@ -4519,7 +3839,7 @@ js_create_typedarray(js_env_t *env, const T *data, size_t len, js_typedarray_t<>
   err = js_create_typedarray(env, len, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + len, view);
+  js__copy(data, data + len, view);
 
   return 0;
 }
@@ -4533,91 +3853,7 @@ js_create_typedarray(js_env_t *env, const T data[N], js_typedarray_t<> &result) 
   err = js_create_typedarray(env, N, view, result);
   if (err < 0) return err;
 
-  std::copy(data, data + N, view);
-
-  return 0;
-}
-
-template <js_typedarray_element T, size_t N>
-static inline auto
-js_create_typedarray(js_env_t *env, const std::array<T, N> data, js_typedarray_t<T> &result) {
-  int err;
-
-  T *view;
-  err = js_create_typedarray(env, N, view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <typename T, size_t N>
-static inline auto
-js_create_typedarray(js_env_t *env, const std::array<T, N> data, js_typedarray_t<> &result) {
-  int err;
-
-  T *view;
-  err = js_create_typedarray(env, N, view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <js_typedarray_element T>
-static inline auto
-js_create_typedarray(js_env_t *env, const std::span<T> &data, js_typedarray_t<T> &result) {
-  int err;
-
-  T *view;
-  err = js_create_typedarray(env, data.size(), view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_create_typedarray(js_env_t *env, const std::span<T> &data, js_typedarray_t<> &result) {
-  int err;
-
-  T *view;
-  err = js_create_typedarray(env, data.size(), view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <js_typedarray_element T>
-static inline auto
-js_create_typedarray(js_env_t *env, const std::vector<T> &data, js_typedarray_t<T> &result) {
-  int err;
-
-  T *view;
-  err = js_create_typedarray(env, data.size(), view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_create_typedarray(js_env_t *env, const std::vector<T> &data, js_typedarray_t<> &result) {
-  int err;
-
-  T *view;
-  err = js_create_typedarray(env, data.size(), view, result);
-  if (err < 0) return err;
-
-  std::copy(data.begin(), data.end(), view);
+  js__copy(data, data + N, view);
 
   return 0;
 }
@@ -4646,21 +3882,6 @@ js_get_arraybuffer_info(js_env_t *env, const js_arraybuffer_t &arraybuffer, T *&
   if (err < 0) return err;
 
   assert(len == sizeof(T));
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_get_arraybuffer_info(js_env_t *env, const js_arraybuffer_t &arraybuffer, std::span<T> &view) {
-  int err;
-
-  T *data;
-  size_t len;
-  err = js_get_arraybuffer_info(env, arraybuffer, data, len);
-  if (err < 0) return err;
-
-  view = std::span(data, len);
 
   return 0;
 }
@@ -4719,36 +3940,6 @@ js_get_typedarray_info(js_env_t *env, const js_typedarray_t<uint8_t> &typedarray
   return 0;
 }
 
-template <js_typedarray_element T>
-static inline auto
-js_get_typedarray_info(js_env_t *env, const js_typedarray_t<T> &typedarray, std::span<T> &view) {
-  int err;
-
-  T *data;
-  size_t len;
-  err = js_get_typedarray_info(env, typedarray, data, len);
-  if (err < 0) return err;
-
-  view = std::span(data, len);
-
-  return 0;
-}
-
-template <typename T>
-static inline auto
-js_get_typedarray_info(js_env_t *env, const js_typedarray_t<> &typedarray, std::span<T> &view) {
-  int err;
-
-  T *data;
-  size_t len;
-  err = js_get_typedarray_info(env, typedarray, data, len);
-  if (err < 0) return err;
-
-  view = std::span(data, len);
-
-  return 0;
-}
-
 static inline auto
 js_get_value(js_env_t *env, const js_boolean_t &boolean, bool &result) {
   return js_get_value_bool(env, static_cast<js_value_t *>(boolean), &result);
@@ -4795,20 +3986,6 @@ js_get_value(js_env_t *env, const js_bigint_t &bigint, uint64_t &result, bool &l
 }
 
 static inline auto
-js_get_value(js_env_t *env, const js_string_t &string, std::string &result) {
-  int err;
-
-  size_t len;
-  err = js_get_value_string_utf8(env, static_cast<js_value_t *>(string), nullptr, 0, &len);
-  if (err < 0) return err;
-
-  result.reserve(len + 1 /* NULL */);
-  result.resize(len);
-
-  return js_get_value_string_utf8(env, static_cast<js_value_t *>(string), reinterpret_cast<utf8_t *>(result.data()), result.capacity(), nullptr);
-}
-
-static inline auto
 js_get_null(js_env_t *env, js_object_t &result) {
   return js_get_null(env, static_cast<js_value_t **>(result));
 }
@@ -4831,11 +4008,6 @@ js_get_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
 static inline auto
 js_get_property(js_env_t *env, const js_object_t &object, const char *name, js_handle_t &result) {
   return js_get_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t **>(result));
-}
-
-static inline auto
-js_get_property(js_env_t *env, const js_object_t &object, const std::string &name, js_handle_t &result) {
-  return js_get_named_property(env, static_cast<js_value_t *>(object), name.c_str(), static_cast<js_value_t **>(result));
 }
 
 template <js_type_options_t options = js_type_options_t(), typename T>
@@ -4864,12 +4036,6 @@ js_get_property(js_env_t *env, const js_object_t &object, const char *name, T &r
 
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
-js_get_property(js_env_t *env, const js_object_t &object, const std::string &name, T &result) {
-  return js_get_property<options>(env, object, name.c_str(), result);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
 js_get_property(js_env_t *env, js_value_t *object, const js_name_t &name, T &result) {
   int err;
 
@@ -4892,12 +4058,6 @@ js_get_property(js_env_t *env, js_value_t *object, const char *name, T &result) 
   return js_get_property<options>(env, unmarshalled, name, result);
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_get_property(js_env_t *env, js_value_t *object, const std::string &name, T &result) {
-  return js_get_property<options>(env, object, name.c_str(), result);
-}
-
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name, const js_handle_t &value) {
   return js_set_property(env, static_cast<js_value_t *>(object), static_cast<js_value_t *>(name), static_cast<js_value_t *>(value));
@@ -4906,11 +4066,6 @@ js_set_property(js_env_t *env, const js_object_t &object, const js_name_t &name,
 static inline auto
 js_set_property(js_env_t *env, const js_object_t &object, const char *name, const js_handle_t &value) {
   return js_set_named_property(env, static_cast<js_value_t *>(object), name, static_cast<js_value_t *>(value));
-}
-
-static inline auto
-js_set_property(js_env_t *env, const js_object_t &object, const std::string &name, const js_handle_t &value) {
-  return js_set_named_property(env, static_cast<js_value_t *>(object), name.c_str(), static_cast<js_value_t *>(value));
 }
 
 template <js_type_options_t options = js_type_options_t(), typename T>
@@ -4939,12 +4094,6 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name, T va
 
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
-js_set_property(js_env_t *env, const js_object_t &object, const std::string &name, T value) {
-  return js_set_property<options>(env, object, name.c_str(), value);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
 js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name, T value) {
   int err;
 
@@ -4965,12 +4114,6 @@ js_set_property(js_env_t *env, js_value_t *object, const char *name, T value) {
   if (err < 0) return err;
 
   return js_set_property<options>(env, unmarshalled, name, value);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_set_property(js_env_t *env, js_value_t *object, const std::string &name, T value) {
-  return js_set_property<options>(env, object, name.c_str(), value);
 }
 
 template <auto fn, js_function_options_t options = js_function_options_t()>
@@ -4999,12 +4142,6 @@ js_set_property(js_env_t *env, const js_object_t &object, const char *name) {
 
 template <auto fn, js_function_options_t options = js_function_options_t()>
 static inline auto
-js_set_property(js_env_t *env, const js_object_t &object, const std::string &name) {
-  return js_set_property<fn, options>(env, object, name.c_str());
-}
-
-template <auto fn, js_function_options_t options = js_function_options_t()>
-static inline auto
 js_set_property(js_env_t *env, js_value_t *object, const js_name_t &name) {
   int err;
 
@@ -5025,12 +4162,6 @@ js_set_property(js_env_t *env, js_value_t *object, const char *name) {
   if (err < 0) return err;
 
   return js_set_property<fn, options>(env, unmarshalled, name);
-}
-
-template <auto fn, js_function_options_t options = js_function_options_t()>
-static inline auto
-js_set_property(js_env_t *env, js_value_t *object, const std::string &name) {
-  return js_set_property<fn, options>(env, object, name.c_str());
 }
 
 static inline auto
@@ -5125,78 +4256,6 @@ js_get_array_elements(js_env_t *env, const js_array_t &array, T result[N]) {
 
 template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
 static inline auto
-js_get_array_elements(js_env_t *env, const js_array_t &array, std::array<T, N> &result) {
-  int err;
-
-  js_value_t *values[N];
-  uint32_t len;
-  err = js_get_array_elements(env, array, values, N, 0, &len);
-  if (err < 0) return err;
-
-  assert(len == N);
-
-  for (uint32_t i = 0; i < N; i++) {
-    err = js_type_info_t<T>::template unmarshall<options>(env, values[i], result[i]);
-    if (err < 0) return err;
-  }
-
-  return 0;
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_get_array_elements(js_env_t *env, const js_array_t &array, std::vector<T> &result) {
-  int err;
-
-  uint32_t len;
-  err = js_get_array_length(env, static_cast<js_value_t *>(array), &len);
-  if (err < 0) return err;
-
-  std::vector<js_value_t *> values(len);
-  err = js_get_array_elements(env, static_cast<js_value_t *>(array), values.data(), len, 0, &len);
-  if (err < 0) return err;
-
-  result.resize(len);
-
-  for (uint32_t i = 0; i < len; i++) {
-    err = js_type_info_t<T>::template unmarshall<options>(env, values[i], result[i]);
-    if (err < 0) return err;
-  }
-
-  return 0;
-}
-
-template <js_type_options_t options = js_type_options_t(), typename... T, size_t... I>
-static inline auto
-js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &result, std::index_sequence<I...>) {
-  int err;
-
-  js_value_t *values[sizeof...(T)];
-  uint32_t len;
-  err = js_get_array_elements(env, array, values, sizeof...(T), 0, &len);
-  if (err < 0) return err;
-
-  assert(len == sizeof...(T));
-
-  try {
-    result = {
-      js_unmarshall_untyped_value<options, T>(env, values[I])...
-    };
-
-    return 0;
-  } catch (int err) {
-    return err;
-  }
-}
-
-template <js_type_options_t options = js_type_options_t(), typename... T>
-static inline auto
-js_get_array_elements(js_env_t *env, const js_array_t &array, std::tuple<T...> &result) {
-  return js_get_array_elements<options>(env, array, result, std::index_sequence_for<T...>());
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
-static inline auto
 js_set_array_elements(js_env_t *env, const js_array_t &array, T values[N], size_t offset = 0) {
   int err;
 
@@ -5208,60 +4267,6 @@ js_set_array_elements(js_env_t *env, const js_array_t &array, T values[N], size_
   }
 
   return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled), N, offset);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T, size_t N>
-static inline auto
-js_set_array_elements(js_env_t *env, const js_array_t &array, const std::array<T, N> &values, size_t offset = 0) {
-  int err;
-
-  js_value_t *marshalled[N];
-
-  for (uint32_t i = 0; i < N; i++) {
-    err = js_type_info_t<T>::template marshall<options>(env, values[i], marshalled[i]);
-    if (err < 0) return err;
-  }
-
-  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled), N, offset);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_set_array_elements(js_env_t *env, const js_array_t &array, const std::vector<T> &values, size_t offset = 0) {
-  int err;
-
-  auto len = values.size();
-
-  std::vector<js_value_t *> marshalled(len);
-
-  for (uint32_t i = 0; i < len; i++) {
-    auto value = values[i];
-
-    err = js_type_info_t<T>::template marshall<options>(env, value, marshalled[i]);
-    if (err < 0) return err;
-  }
-
-  return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(marshalled.data()), len, offset);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename... T, size_t... I>
-static inline auto
-js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T...> &values, size_t offset, std::index_sequence<I...>) {
-  try {
-    js_value_t *values[] = {
-      js_marshall_untyped_value<options, T>(env, std::get<I>(values))...
-    };
-
-    return js_set_array_elements(env, static_cast<js_value_t *>(array), const_cast<js_value_t *const *>(values), sizeof...(T), offset);
-  } catch (int err) {
-    return err;
-  }
-}
-
-template <js_type_options_t options = js_type_options_t(), typename... T>
-static inline auto
-js_set_array_elements(js_env_t *env, const js_array_t &array, const std::tuple<T...> &values, size_t offset = 0) {
-  return js_set_array_elements<options>(env, array, values, offset, std::index_sequence_for<T...>());
 }
 
 template <js_type_options_t options = js_type_options_t(), typename T>
@@ -5278,9 +4283,7 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, j
   descriptor.getter = nullptr;
   descriptor.setter = nullptr;
 
-  const auto &name = property.name();
-
-  err = js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(name.data()), name.length(), &descriptor.name);
+  err = js_create_string_utf8(env, reinterpret_cast<const utf8_t *>(property.name()), property.name_length(), &descriptor.name);
   if (err < 0) return err;
 
   auto value = property.value();
@@ -5293,40 +4296,23 @@ js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property, j
   return 0;
 }
 
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_create_property_descriptor(js_env_t *env, const js_property_t<T> &property) {
-  int err;
-
-  js_property_descriptor_t descriptor;
-  err = js_create_property_descriptor<options>(env, property, descriptor);
-  if (err < 0) throw err;
-
-  return descriptor;
-}
-
 template <js_type_options_t options = js_type_options_t(), typename... T>
 static inline auto
 js_define_properties(js_env_t *env, const js_object_t &object, const js_property_t<T>... properties) {
-  try {
-    js_property_descriptor_t descriptors[] = {
-      js_create_property_descriptor<options>(env, properties)...
-    };
+  int err = 0;
 
-    return js_define_properties(env, static_cast<js_value_t *>(object), descriptors, sizeof...(T));
-  } catch (int err) {
-    return err;
-  }
+  js_property_descriptor_t descriptors[sizeof...(T)];
+
+  size_t i = 0;
+
+  if ((... || ((err = js_create_property_descriptor<options>(env, properties, descriptors[i++])) < 0))) return err;
+
+  return js_define_properties(env, static_cast<js_value_t *>(object), descriptors, sizeof...(T));
 }
 
 static inline auto
 js_run_script(js_env_t *env, const char *file, size_t len, int offset, const js_string_t &source, js_handle_t &result) {
   return js_run_script(env, file, len, offset, static_cast<js_value_t *>(source), static_cast<js_value_t **>(result));
-}
-
-static inline auto
-js_run_script(js_env_t *env, const std::string &file, int offset, const js_string_t &source, js_handle_t &result) {
-  return js_run_script(env, file.data(), file.length(), offset, static_cast<js_value_t *>(source), static_cast<js_value_t **>(result));
 }
 
 static inline auto
@@ -5487,40 +4473,6 @@ js_create_error(js_env_t *env, const js_handle_t &code, const char *message, js_
 template <js_type_options_t options = js_type_options_t(), typename T>
 static inline auto
 js_create_error(js_env_t *env, T code, const char *message, js_object_t &result) {
-  int err;
-
-  js_string_t string;
-  err = js_create_string(env, message, string);
-  if (err < 0) return err;
-
-  return js_create_error<options>(env, code, string, result);
-}
-
-static inline auto
-js_create_error(js_env_t *env, const std::string &message, js_object_t &result) {
-  int err;
-
-  js_string_t string;
-  err = js_create_string(env, message, string);
-  if (err < 0) return err;
-
-  return js_create_error(env, string, result);
-}
-
-static inline auto
-js_create_error(js_env_t *env, const js_handle_t &code, const std::string &message, js_object_t &result) {
-  int err;
-
-  js_string_t string;
-  err = js_create_string(env, message, string);
-  if (err < 0) return err;
-
-  return js_create_error(env, code, string, result);
-}
-
-template <js_type_options_t options = js_type_options_t(), typename T>
-static inline auto
-js_create_error(js_env_t *env, T code, const std::string &message, js_object_t &result) {
   int err;
 
   js_string_t string;

@@ -27,16 +27,16 @@ main() {
   e = js_create_object(env, object);
   assert(e == 0);
 
-  e = js_set_property(env, object, "foo", "bar");
+  char bar[] = "bar";
+
+  e = js_set_property(env, object, "foo", static_cast<char *>(bar));
   assert(e == 0);
 
-  char *value;
+  char value[4];
   e = js_get_property(env, object, "foo", value);
   assert(e == 0);
 
   assert(strcmp(value, "bar") == 0);
-
-  delete[] value;
 
   e = js_close_handle_scope(env, scope);
   assert(e == 0);

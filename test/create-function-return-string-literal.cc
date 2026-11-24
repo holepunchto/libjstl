@@ -2,7 +2,7 @@
 #include <js.h>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 std::string
 on_call(js_env_t *env) {

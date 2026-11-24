@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <uv.h>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 void
 on_call(js_env_t *env, std::optional<js_string_t> string) {

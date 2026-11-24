@@ -10,6 +10,7 @@ add_library_targets(
   jstl
   HEADERS
     include/jstl.h
+    include/jstl/std.h
   FEATURES
     cxx_std_20
   SOURCES NONE

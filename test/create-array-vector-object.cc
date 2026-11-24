@@ -3,7 +3,7 @@
 #include <uv.h>
 #include <vector>
 
-#include <jstl.h>
+#include <jstl/std.h>
 
 int
 main() {
