@@ -532,7 +532,7 @@ struct js_type_info_t<std::chrono::time_point<std::chrono::system_clock, D>> {
 
     // Converting a time that is NaN or out of range for D is undefined
     // behavior, so it's rejected even when checks are off.
-    if (!(time >= milliseconds_t(D::min()).count() && time <= milliseconds_t(D::max()).count())) {
+    if (!(time >= milliseconds_t((D::min)()).count() && time <= milliseconds_t((D::max)()).count())) {
       err = js_throw_range_error(env, nullptr, "Date is invalid or out of range");
       assert(err == 0);
 
